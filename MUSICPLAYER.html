@@ -1,0 +1,61 @@
+<script>
+async function get_JSON(url) {
+  let response = await fetch(url);
+  let data = await response.json();
+  return data;
+}
+async function setup_doc() {
+  // setup dropdown selection with all playlists in user account
+  const playlist_src_queue = ['https://api.mixcloud.com/noah-jaffe/playlists/'];
+  var dropdown_selections = document.getElementById('playlist_selector').options;
+  while (playlist_src_queue.length > 0) {
+    var playlist_src = playlist_src_queue.pop();
+    var playlist_data = await get_JSON(playlist_src);
+    if ('data' in playlist_data) {
+      for (var i in playlist_data['data']) {
+        dropdown_selections.add(new Option(playlist_data['data'][i]['name'],playlist_data['data'][i]['slug']));
+      }
+    }
+    if ('paging' in playlist_data) {
+      for (var k in playlist_data['paging']) {
+          playlist_src_queue.push(playlist_data['paging'][k])
+      }
+    }
+  }
+  
+  // setup iframe
+  // set random item to be selected to start
+  document.getElementById('playlist_selector').value = '';
+  }
+function update_iframe() {
+  var currently_selected = '';
+  try {
+    document.querySelector("#player").src.split("%2F");
+    currently_selected = currently_selected[currently_selected.length -2];
+  } catch(e) {}
+  var iframe = document.createElement('iframe');
+  iframe.allow = "autoplay";
+  iframe.width = "100%";
+  iframe.height = "180";
+  iframe.id = "player";
+  var selected = document.getElementById('playlist_selector').value;
+  var plist_slug = null;
+  if (selected == '') {
+    // then use random that isnt the currently playing value
+    while (selected == '' || selected == currently_selected) {
+      selected = document.getElementById('playlist_selector').options[Math.floor(Math.random() * (document.getElementById('playlist_selector').options.length - 1)) + 1].value;
+    }
+    document.getElementById('playlist_selector').value = selected;
+  }
+  iframe.src = `https://www.mixcloud.com/widget/iframe/?hide_cover=1&hide_artwork=1&autoplay=1&feed=%2Fnoah-jaffe%2Fplaylists%2F${selected}%2F`;
+  // delete existing iframes
+  document.querySelectorAll('iframe').forEach(iframe => iframe.remove());
+  document.querySelector("#iframe_holder").appendChild(iframe);
+}
+window.onload = async function() {await setup_doc(); update_iframe();};
+</script>
+<label>Playlist:</label>
+<select name="playlists" id="playlist_selector" onchange="update_iframe()">
+	<option value=''>RANDOM</option>
+</select>
+<div id="iframe_holder"></div>

@@ -34,7 +34,7 @@
 		}
 
 		// REMOVE BAD SONGS
-		var BAD_SONGS = ['/therealrons/rons-podcast-529/','RONS Podcast #160']; 	// EXAMPLE VALUES, EDIT THIS AS WE SEE FIT
+		var BAD_SONGS = ['/therealrons/rons-podcast-665/','RONS Podcast #160']; 	// EXAMPLE VALUES, EDIT THIS AS WE SEE FIT
 		
 		var i = PLAYLIST_SONGS.length - 1;
 		while (i >= 0) {
@@ -52,7 +52,7 @@
 	async function get_JSON(url) { let response = await fetch(url); let data = await response.json(); return data; }
 	
 	// this was working at one point, then they implemented cors issues so i had to go thru justcors.com
-	async function retreive_audio_src2(key) { return JSON.parse(await (await fetch(`https://www.dlmixcloud.com/ajax.php/?url=https://www.mixcloud.com${key}`,{mode: 'no-cors'})).text())['url']; }
+	async function retreive_audio_src2(key) { return JSON.parse(await (await fetch(`https://www.dlmixcloud.com/ajax.php/?url=https://www.mixcloud.com${key}`)).text())['url']; }
 
 	async function retreive_audio_src(key) { 
 		var url = `https://justcors.com/l_n1ehx3zipc/https://www.dlmixcloud.com/ajax.php/?url=https://www.mixcloud.com${key}`;
@@ -86,21 +86,23 @@
 	}
 	function mark_favorited_timestamp(){
 		// adds a way to mark down timestamps of specific songs so that we can keep track of favorite songs etc.
-		if (!('timestamps' in PLAYLIST_SONGS[PLAYER_HISTORY_STACK[0]])) {
-			PLAYLIST_SONGS[PLAYER_HISTORY_STACK[0]].timestamps = [];
-		}
-		var curr_timestamp = 0;	// TODO: GET CURRENT TIMESTAMP
-		if (!(curr_timestamp in PLAYLIST_SONGS[PLAYER_HISTORY_STACK[0]].timestamps)){
-			PLAYLIST_SONGS[PLAYER_HISTORY_STACK[0]].timestamps.push(curr_timestamp);
-		}
+		var video = document.querySelector('video');
+		var curr_timestamp = video.currentTime;	
+		var curr_song = PLAYLIST_SONGS[PLAYER_HISTORY_STACK[0]];
+		var timestamp_list = document.querySelector('#timestamps_list');
+		var li = document.createElement("li");
+		li.innerText = `${curr_song.name} @ ${sec_to_human_readable_timestamp(curr_timestamp)}`;
+		timestamp_list.appendChild(li);
 	}
-
+	function sec_to_human_readable_timestamp(sec) {
+		return `${String(parseInt(sec/3600)).padStart(2, '0')}:${String(parseInt((sec % 3600)/60)).padStart(2, '0')}:${parseInt(sec) % 60}`;
+	}
 	function load_selected_song(){
 		var selected_val = document.querySelector('select').value;
 		var i = 0;
 		while (i < PLAYLIST_SONGS.length) {
 			if (PLAYLIST_SONGS[i].key == selected_val) {
-				load_next_song(i);
+				load_song_from_index(i);
 				return;
 			}
 			++i;
@@ -110,7 +112,10 @@
 	 * PREREQ: update_playlist_songs has been run
 	 * @param next_song, <int> the index from the PLAYLIST_SONGS to use, <null>=0, <str> the song key from the PLAYLIST_SONGS to use.
 	 */
-	async function load_next_song(next_song=null){
+	async function load_song_from_index(next_song=null){
+		if (PLAYLIST_SONGS.length == 0) {
+			return;
+		}
 		// is run when we want to start loading a new song into the player
 		if (typeof(next_song) == 'number') {
 			next_song = (parseInt(next_song) || 0) % PLAYLIST_SONGS.length;
@@ -133,13 +138,30 @@
 		if (PLAYLIST_SONGS[next_song].src == undefined) {
 			PLAYLIST_SONGS[next_song].src = await retreive_audio_src(PLAYLIST_SONGS[next_song].key);
 		}
+		
 		// now we have the src for this song... its ready to be loaded
 		await update_player_src(PLAYLIST_SONGS[next_song].src);
-
+		// TODO: UPDATE UI
 		// set currently playing in player history
 		PLAYER_HISTORY_STACK.splice(0, 0, next_song);
+		var dropdown_selections = document.getElementById('songlist_selector');
+		dropdown_selections.value = PLAYLIST_SONGS[next_song].key;
+
+		// update played history tab
+		update_played_history_ui();
 	}
 
+	function update_played_history_ui() {
+		var history_list = document.querySelector('#played_history_list');
+		var ul = document.createElement("ul");
+		ul.setAttribute('id','played_history_list');
+		PLAYER_HISTORY_STACK.forEach(e=>{
+			var li = document.createElement("li"); 
+			li.innerText = `${PLAYLIST_SONGS[e].name}`;
+			ul.appendChild(li);
+		});
+		history_list.innerHTML = ul.innerHTML;
+	}
 	/**
 	 * @param src: <str> the audio source string to be played
 	 */
@@ -150,34 +172,43 @@
 		if (!source) { source = document.createElement('source'); }
 		source.setAttribute('src', src);
 		video.load();
-		try{video.play();}catch{}
+		try{video.play();}catch(err){}
+		
 	}
 
 	function update_dropdown_with_current_songs(){
+		// TODO: SORT BY PLAYLIST_SONGS?
 		var i = 0;
 		var dropdown_selections = document.getElementById('songlist_selector').options;
+		while (dropdown_selections.length > 0) {
+			dropdown_selections[0].remove();
+		}
+		PLAYLIST_SONGS.sort((a,b) => (a.key > b.key) ? 1 : ((b.key > a.key) ? -1 : 0));
 		while (i < PLAYLIST_SONGS.length) {
 			dropdown_selections.add(new Option(PLAYLIST_SONGS[i].name,PLAYLIST_SONGS[i].key));
 			++i;
 		}
+		
 	}
 
 	window.onload = async function() {
+		document.querySelector('video').addEventListener('ended',load_song_from_index(get_random_song_idx()),false);
 		await update_playlist_songs();
 		update_dropdown_with_current_songs();
-		load_next_song();
+		load_song_from_index(get_random_song_idx());
 	};
+	
 </script>
 <body>
 	<h4>
-		Currently playing:&nbsp;<select id="songlist_selector" onchange="load_selected_song()"></select>
-		&nbsp;<button id="skip" onclick="load_next_song(get_next_song_idx())">skip this song</button>
-		&nbsp;<button id="random_button" onclick="load_next_song(get_random_song_idx())">chose a random song</button>
+		Currently playing:&nbsp;<select id="songlist_selector" onchange="load_selected_song()"><option>Loading...</option></select>
+		&nbsp;<button id="skip" onclick="load_song_from_index(get_next_song_idx())">skip this song</button>
+		&nbsp;<button id="random_button" onclick="load_song_from_index(get_random_song_idx())">chose a random song</button>
 		&nbsp;<button id="mark_timestamp" onclick="mark_favorited_timestamp()">mark current timestamp</button>
 	</h4>
-	<video controls autoplay id="player"><source src="" type="audio/mp4" id="player_source"></video>
+	<video controls autoplay id="player" width="90%" height="55px"><source src="" type="audio/mp4" id="player_source"></video>
 	<h4>Played history:</h4>
-	<ul id="played_history_list">todo: implement this bit</ul>
+	<ul id="played_history_list"></ul>
 	<p>TIMESTAMPS:</p>
-	<ul id="timestamps_list">todo: implement this bit</ul>
+	<ul id="timestamps_list"></ul>
 </body>

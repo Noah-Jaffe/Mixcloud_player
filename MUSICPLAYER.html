@@ -1,3 +1,6 @@
+<!DOCTYPE HTML>
+<html>
+<head>
 <script>
 	// This is designed to play specific songs from mixcloud...
 	// I know i overuse loops and i should just be using indexes of the PLAYLIST_SONGS as keys, but i have future plans that might not allow that to be used.
@@ -9,8 +12,8 @@
 		// custom func for filling PLAYLIST_SONGS with whatever you want
 		
 		// my func will do Podcasts #600+ RONS and 382
-		const ronsreg = /RONS.*?Podcast.*?([6]\d{2}|\d{4,})/i;
-		var search_queue = ["https://api.mixcloud.com/search/?limit=100&q=rons%20podcast%20%236&type=cloudcast"];
+		const ronsreg = /RONS.*?Podcast.*?\d{3,4}/i; //([6]\d{2}|\d{4,}|3[7-0][0-9])/i;
+		var search_queue = ["https://api.mixcloud.com/search/?limit=100&q=rons%20podcast%20%23&type=cloudcast"];
 		while (search_queue.length > 0) {
 			var search_url = search_queue.pop();
 			var search_results = await get_JSON(search_url);
@@ -32,7 +35,6 @@
 				}
 			}
 		}
-
 		// REMOVE BAD SONGS
 		var BAD_SONGS = ['/therealrons/rons-podcast-665/','RONS Podcast #160']; 	// EXAMPLE VALUES, EDIT THIS AS WE SEE FIT
 		
@@ -48,7 +50,21 @@
 		console.log('done upadting my song playlist');
 		return true;
 	}
-
+	async function find_songs(reg){
+		var results = [];
+		for (var record in PLAYLIST_SONGS) {
+			var url = `https://api.mixcloud.com${PLAYLIST_SONGS[record].key}`;
+			var data = await get_JSON(url);
+			if (data.description) {
+				let m;
+				if ((m = reg.exec(data.description)) !== null) {
+					results.push(PLAYLIST_SONGS[record]);
+				}
+			}
+		}
+		console.log('done');
+		return results;
+	}
 	async function get_JSON(url) { let response = await fetch(url); let data = await response.json(); return data; }
 	
 	// this was working at one point, then they implemented cors issues so i had to go thru justcors.com
@@ -86,8 +102,8 @@
 	}
 	function mark_favorited_timestamp(){
 		// adds a way to mark down timestamps of specific songs so that we can keep track of favorite songs etc.
-		var video = document.querySelector('video');
-		var curr_timestamp = video.currentTime;	
+		var audio = document.querySelector('audio');
+		var curr_timestamp = audio.currentTime;	
 		var curr_song = PLAYLIST_SONGS[PLAYER_HISTORY_STACK[0]];
 		var timestamp_list = document.querySelector('#timestamps_list');
 		var li = document.createElement("li");
@@ -132,7 +148,7 @@
 				next_song = get_random_song_idx();
 			}
 		} else {
-			next_song = get_next_song_idx();
+			next_song = document.querySelector('#shuffle_button').innerText == "🔀" ? get_random_song_idx() : get_next_song_idx();
 		}
 		// now next_song is an int.
 		if (PLAYLIST_SONGS[next_song].src == undefined) {
@@ -167,13 +183,12 @@
 	 */
 	async function update_player_src(src) {
 		// TODO update our players src
-		var video = document.querySelector('video');
+		var audio = document.querySelector('audio');
 		var source = document.querySelector('source');
 		if (!source) { source = document.createElement('source'); }
 		source.setAttribute('src', src);
-		video.load();
-		try{video.play();}catch(err){}
-		
+		audio.load();
+		try{audio.play();audio.muted = false;}catch(err){}
 	}
 
 	function update_dropdown_with_current_songs(){
@@ -183,7 +198,8 @@
 		while (dropdown_selections.length > 0) {
 			dropdown_selections[0].remove();
 		}
-		PLAYLIST_SONGS.sort((a,b) => (a.key > b.key) ? 1 : ((b.key > a.key) ? -1 : 0));
+		// Sort by name, then by key
+		PLAYLIST_SONGS.sort((a,b) => (a.name > b.name) ? 1 : ((b.name > a.name) ? -1 : (a.key > b.key) ? 1 : ((b.key > a.key) ? -1 : 0)));
 		while (i < PLAYLIST_SONGS.length) {
 			dropdown_selections.add(new Option(PLAYLIST_SONGS[i].name,PLAYLIST_SONGS[i].key));
 			++i;
@@ -191,24 +207,30 @@
 		
 	}
 
+	
+
 	window.onload = async function() {
-		document.querySelector('video').addEventListener('ended',load_song_from_index(get_random_song_idx()),false);
+		document.querySelector('audio').addEventListener('ended',load_song_from_index(get_random_song_idx()),false);
+		document.querySelector('audio').addEventListener('pause',function(){if (document.querySelector('audio').currentTime >= document.querySelector('audio').duration - 1) {load_song_from_index()}},false);
+		document.querySelector('#shuffle_button').addEventListener('click',function(){document.querySelector('#shuffle_button').innerText = document.querySelector('#shuffle_button').innerText == "🔀" ? "🔃" : "🔀"}, false);
 		await update_playlist_songs();
 		update_dropdown_with_current_songs();
 		load_song_from_index(get_random_song_idx());
-	};
-	
+	}
 </script>
+</head>
 <body>
 	<h4>
 		Currently playing:&nbsp;<select id="songlist_selector" onchange="load_selected_song()"><option>Loading...</option></select>
-		&nbsp;<button id="skip" onclick="load_song_from_index(get_next_song_idx())">skip this song</button>
-		&nbsp;<button id="random_button" onclick="load_song_from_index(get_random_song_idx())">chose a random song</button>
-		&nbsp;<button id="mark_timestamp" onclick="mark_favorited_timestamp()">mark current timestamp</button>
+		&nbsp;<button id="shuffle_button" >🔀</button>
+		&nbsp;<button id="skip" onclick="load_song_from_index()">⏭</button>
+		&nbsp;<button id="mark_timestamp" onclick="mark_favorited_timestamp()">⭐</button>
+
 	</h4>
-	<video controls autoplay id="player" width="90%" height="55px"><source src="" type="audio/mp4" id="player_source"></video>
+	<audio controls autoplay id="player" height="55px" style="width:90%"><source src="" type="audio/mp4" id="player_source"></audio>
 	<h4>Played history:</h4>
 	<ul id="played_history_list"></ul>
 	<p>TIMESTAMPS:</p>
 	<ul id="timestamps_list"></ul>
 </body>
+</html>

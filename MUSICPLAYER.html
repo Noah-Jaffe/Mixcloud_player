@@ -306,7 +306,7 @@
 		await update_playlist_songs();
 		update_dropdown_with_current_songs();
 		load_song_from_index(get_random_song_idx());
-		document.querySelector('audio').addEventListener('ended',function(){ if (! document.querySelector('audio').seeking) load_song_from_index(get_random_song_idx())},false);
+		document.querySelector('audio').addEventListener('ended',function(){ if (! document.querySelector('audio').seeking) load_song_from_index()},false);
 		document.querySelector('#songlist_selector').addEventListener('change',load_selected_song, false);
 		document.querySelector('#skip').addEventListener('click',load_song_from_index, false);
 		document.querySelector('#mark_timestamp').addEventListener('click',mark_favorited_timestamp, false);

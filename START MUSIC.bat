@@ -1,1 +1,2 @@
-start msedge -inprivate --kiosk --edge-kiosk-type=public-browsing --window-size="200,300" --window-position="0,0" --bwsi --disable-and-delete-previous-log  --disable-gpu ./MUSICPLAYER.html
+start msedge -inprivate --kiosk --edge-kiosk-type=public-browsing --window-size="600,400" --window-position="0,0" --bwsi --disable-and-delete-previous-log  --disable-gpu ./MUSICPLAYER.html
+# alternative: # start msedge --new-window --disable-gpu --app=file:///<PATH_TO_FILE>\MUSICPLAYER.html --window-size="600,400" --window-position="0,0" --disable-extensions -inprivate --kiosk --edge-kiosk-type=public-browsing

@@ -8,10 +8,15 @@ Due to the Embedded mixcloud player being limited to only loading 19 songs from 
 
 ## How to use: 
 - override function update_playlist_songs so that you populate PLAYLIST_SONGS with names and source keys to match the follow json pattern:
+```js
 PLAYLIST_SONGS = [
-  {name: "<song name>", key:"<mixcloud key>"},
-  ...
-];
+ {
+  name: "<song name>", 
+  key:  "<mixcloud key>"
+ },
+ ...
+]; 
+```
 
 
 

@@ -2,125 +2,270 @@
 <html>
 <head>
 <script>
-	// This is designed to play specific songs from mixcloud...
-	// I know i overuse loops and i should just be using indexes of the PLAYLIST_SONGS as keys, but i have future plans that might not allow that to be used.
+	class Song {
+		constructor(name=null, key=null, artist=null, srcUrl=null) {
+			this.name = name;
+			this.key = key;
+			this.artist = artist;
+			this.srcUrl = srcUrl;
+			this.timestamps = new Set();
+		}
+		
+		/** 
+		 * @param other <Song> the other song to be compared.
+		 * @return <bool> true if the {.name}, {.key}, and {.artist} values are the same
+		 **/
+		equals(other) {
+			return this.name == other.name && this.key == other.key && this.artist == other.artist;
+		}
 
+		/** Loads the given song object from local storage via {this.key} **/
+		loadFromLocalStorage(){
+			var val = localStorage.getItem(this.key);
+			if (val == null){
+				return;
+			}
+			this.fromJSON(val);
+		}
+		
+		/** Saves this Song object to local storage using its UID as a key and this jsonified object as the value **/
+		saveToLocalStorage() {
+			localStorage.setItem(this.getLocalStorageUID(), this.toJSON());
+		}
+		
+		/** @return <string> a UID for this object **/
+		getLocalStorageUID() {
+			if (this.key == null) {
+				return null;
+			}
+			var hashStr = `${this.key}${this.artist}${this.name}`;
+			var hash = 0, i, chr;
+			if (hashStr.length === 0) return hash;
+			for (var i = 0; i < this.length; i++) {
+				chr = this.charCodeAt(i);
+				hash = ((hash << 5) - hash) + chr;
+				hash |= 0; // Convert to 32bit integer
+			}
+			return hash;
+		}
+		
+		/** @return the src url for this song. Will also set {this.srcUrl} **/
+		async getSrcURL(){
+			if (this.srcUrl == null) {
+				this.srcUrl = await retreive_audio_src(this.key);
+			}
+			return this.srcUrl;
+		}
 	
-	var PLAYER_HISTORY_STACK = [];
-	var PLAYLIST_SONGS = [];
-	async function load_rons_songs() {
-		const ronsreg = /RONS.*?Podcast.*?\d{3,4}/i; //([6]\d{2}|\d{4,}|3[7-0][0-9])/i;
-		var search_queue = ["https://api.mixcloud.com/search/?limit=100&q=rons%20podcast%20%23&type=cloudcast"];
-		while (search_queue.length > 0) {
-			var search_url = search_queue.pop();
-			var search_results = await get_JSON(search_url);
-			if ('data' in search_results) {
-				for (var i in search_results['data']) {
-					let m;
-					if ((m = ronsreg.exec(search_results['data'][i]['name'])) !== null) {
-						PLAYLIST_SONGS.push({
-							name:search_results['data'][i]['name'],
-							key:search_results['data'][i]['key']
-							});
-					}
-				}
-			}
-			if ('paging' in search_results) {
-				if ('next' in search_results['paging']) {
-					search_queue.push(search_results['paging']['next'])
-				}
-			}
+		/** Adds the given timestamp {time_sec} to the timestamp list **/
+		addTimestamp(time_sec) {
+			var ts = parseInt(time_sec);
+			this.timestamps.add(ts);
 		}
-	}
-	async function load_lys_songs() {
-		var search_queue = ["https://api.mixcloud.com/search/?limit=100&type=cloudcast&q=Lys_InTheMix"];
-		while (search_queue.length > 0) {
-			var search_url = search_queue.pop();
-			var search_results = await get_JSON(search_url);
-			if ('data' in search_results) {
-				for (var i in search_results['data']) {
-					if (search_results['data'][i]['user']['username'].toLowerCase() == "lys_") {
-						PLAYLIST_SONGS.push({
-							name:search_results['data'][i]['name'],
-							key:search_results['data'][i]['key']
-							});
-					}
-				}
-			}
-			if ('paging' in search_results) {
-				if ('next' in search_results['paging']) {
-					search_queue.push(search_results['paging']['next'])
-				}
-			}
+		
+		/** Removes the given timestamp {time_sec} from the timestamp list **/
+		removeTimestamp(time_sec) {
+			this.timestamps.delete(parseInt(time_sec));
 		}
-	}
-	async function load_djmighty_songs() {
-		const ronsreg = /Liquid DnB Mix - Vol 6[12469]/i;
-		var search_queue = ["https://api.mixcloud.com/search/?limit=100&type=cloudcast&q=Liquid%20DnB%20Mix%20-%20Vol"];
-		while (search_queue.length > 0) {
-			var search_url = search_queue.pop();
-			var search_results = await get_JSON(search_url);
-			if ('data' in search_results) {
-				for (var i in search_results['data']) {
-					let m;
-					if ((m = ronsreg.exec(search_results['data'][i]['name'])) !== null) {
-						PLAYLIST_SONGS.push({
-							name:search_results['data'][i]['name'],
-							key:search_results['data'][i]['key']
-							});
-					}
-				}
-			}
-			if ('paging' in search_results) {
-				if ('next' in search_results['paging']) {
-					search_queue.push(search_results['paging']['next'])
-				}
-			}
+		
+		/** Resets this Songs timestamps and deletes the src url. **/
+		reset() {
+			this.timestamps = new Set();
+			this.srcUrl = null;
 		}
-	}
-	function fix_name(name, key) {
-		if (key.toLowerCase().includes("rons-podcast")) {
-			return name.replace(/RONS:? Podcast #?(\w+)/gmi, `RONS: Podcast #$1`);
-		} else if (key.toLowerCase().includes("/lys_/")) {
-			if (key.toLowerCase().includes("augustsummermix2019")) {
-				return "Lys: August Summer 2019";
-			} else if (key.toLowerCase().includes("bienvenue-%c3%a0-mon-mix-dhiver-2019")) {
-				return "Lys: Winter mix 2019"
-			} 
-			return name.replace(/lys[_-]{1,2}/gmi, "Lys: ");
-		} else if (key.toLowerCase().includes("/dj-mighty-dnb/")) { 
-			return name.replace(" - ", ": ");
+		
+		/** @return a jsonified string version of this object **/
+		toJSON(){
+			return JSON.stringify(this,(_key, value) => (value instanceof Set ? [...value] : value));
 		}
-		return name;
-	}
-	async function update_playlist_songs() {
-		// custom func for filling PLAYLIST_SONGS with whatever you want
-		document.title = "Loading: RONS";
-		await load_rons_songs();
-		document.title = "Loading: Lys_";
-		await load_lys_songs();
-		document.title = "Loading: DJ Mighty";
-		await load_djmighty_songs();
+		
+		/** Sets this object's values from the given jsonified string. **/
+		fromJSON(js) {
+			if (typeof(js) == 'string') {
+				js = JSON.parse(js);
+			} else if (js == null) {
+				return {};
+			}
+			this.name = js.name;
+			this.key = js.key;
+			this.artist = js.artist;
+			this.srcUrl = js.srcUrl;
+			this.timestamps = new Set(js.timestamps);
 
-		document.title = "Cleaning songs...";
+		}
+	}
+	var PlayModes = {
+		BACK:-1,
+		REPEAT:0,
+		FORWARD:1,
+		RANDOM:2,
+		null:2,
+		'⬅️':-1,
+		'🔁':0,
+		'➡️':1,
+		'🔀':2,
+	}
+	class Playlist {
+		/**
+		 * @param songs <array of Song> an array of songs to pre-populate the current song list.
+		 **/
+		constructor(songs = []) {
+			this.songs = [];
+			for (var s of songs) {
+				this.addSong(s);
+			}
+			this.songs = this.songs.sort(this.sortOrder)
+			this.currentSong = null;
+			this.playMode = 2;	// start on random
+			this.history = [];
+		}
+		
+		/** Merges two playlists.
+		 * @param other <Playlist> The other playlist to be merged into this one.
+		 **/
+		merge(other) {
+			if (!(other instanceof Playlist)) {
+				throw 'Invalid argument type';
+			}
+			for (var s of other.songs) {
+				this.addSong(s);
+			}
+			this.songs = this.songs.sort(this.sortOrder);
+		}
 
-		// REMOVE BAD SONGS
-		var BAD_SONGS = ['/therealrons/rons-podcast-665/',]; 	// EXAMPLE VALUES, EDIT THIS AS WE SEE FIT
+		/** Sort by artist, then by name, then by key
+		 * @param a <Song>
+		 * @param b <Song>
+		 **/
+		sortOrder(a,b) {
+			return (a.artist != b.artist ? (a.artist < b.artist) : (a.name != b.name ? (a.name < b.name) : (a.key < b.key)))
+		}
+		
+		/** Adds a song to the list of songs if not already contained.
+		 * @param song <Song> the song to be added
+		 **/
+		addSong(song) {
+			if (!(song instanceof Song)) {
+				throw `invalid argument for 'song'`;
+			}
+			if (!isSongInPlaylist(song)) {
+				this.songs.push(song);
+			}
+		}
+
+		/** @return if the given {song} is in {this.songs} **/
+		isSongInPlaylist(song) {
+			for (var s of this.songs) {
+				if (song.equals(s)) {
+					return true;
+				}
+			}
+			return false;
+		}
+
+		/** TODO: get organized timestamps of all songs **/
+		getTimestamps() {
+			throw `NotImplementedError`;
+		}
+
+		/** Sets the playlist play mode.
+		 * @param playMode <int> the PlayMode number
+		 **/
+		setPlayMode(playMode = null) {
+			this.playMode = playMode;
+			console.log("TODO: Reset the next song object?")
+		}
+	
+		/**
+		 * @param next <Song> the next song to be played, or <null> to auto select which song to play.
+		 * @returns the next song object to be played
+		 **/
+		playNextSong(next=null){
+			if (next instanceof Song && isSongInPlaylist(next)) {
+				
+			}
+		}
+	}
+	class PlaylistGenerator {
+		/** 
+		 * @param query <string> the query to start the search on
+		 * @param conditionalMatch <function, null> the function to match songs to be kept from search results.
+		 * TODO: @param fixName=null, 
+		 * TODO: @param excludeRegs=null
+		 **/
+		constructor(query=null, conditionalMatch=null,) {
+			if (typeof(query) == "string" && query.length > 0) {
+				this.query = query;
+			} else {
+				throw 'Invalid value for query!';
+			}
 			
-		var i = PLAYLIST_SONGS.length - 1;
-		while (i >= 0) {
-			PLAYLIST_SONGS[i].name = fix_name(PLAYLIST_SONGS[i].name, PLAYLIST_SONGS[i].key);
-			if (PLAYLIST_SONGS[i].name in BAD_SONGS || PLAYLIST_SONGS[i].key in BAD_SONGS) {
-				PLAYLIST_SONGS = PLAYLIST_SONGS.splice(i, 1);
+			if (typeof(conditionalMatch) == "function") {
+				this.condition = conditionalMatch;
+			} else if (conditionalMatch == null) {
+				this.condition = function(){return true;}
+			} else {
+				throw 'Invalid conditional function! Needs to be null, or a function that returns if the song from the search result is to be used!';
 			}
-			i -= 1;
 		}
-		console.log('done updating my song playlist');
-		return true;
+
+		/** Will search for and populate the array of songs {this.songs}. **/
+		async generate() {
+			var playlist = new Playlist();
+			var search_queue = [];
+			search_queue.push(`https://api.mixcloud.com/search/?limit=100&type=cloudcast&q=${this.query}`)
+			while (search_queue.length > 0) {
+				var search_url = search_queue.pop();
+				var search_results = await get_JSON(search_url);
+				if ('data' in search_results) {
+					for (var i in search_results['data']) {
+						if (this.condition(search_results['data'][i])) {
+							playlist.addSong(new Song(search_results['data'][i]['name'],search_results['data'][i]['key'],search_results['data'][i]['user']['name'],null));
+						}
+					}
+				}
+				if ('paging' in search_results) {
+					if ('next' in search_results['paging']) {
+						search_queue.push(search_results['paging']['next'])
+					}
+				}
+			}
+			return playlist;
+		}
+	
 	}
+	class PlaylistGeneratorManager {
+		constructor() {
+			this.PlaylistGenerators = [];
+		}
+		
+		/** Adds a PlaylistGenerator to the list of PlaylistGenerators to be managed
+		 * @param a <string> or <PlaylistGenerator>, the PlaylistGenerator object, or the query for a new PlaylistGenerator object.
+		 * @param b <null> or <function>, if {@param a} is a string, this is expected to be a function for the new PlaylistGenerator object; otherwise leave as null.
+		 **/
+		addPlaylistGenerator(a=null, b=null) {
+			if (a instanceof PlaylistGenerator) {
+				this.PlaylistGenerators.push(a);
+			} else {
+				// try it, if error thrown, oh well
+				this.PlaylistGenerators.push(new PlaylistGenerator(a, b));
+			}
+		}
+
+		/** Generates all of this managers playlists **/
+		async generateMasterPlaylist(){
+			console.debug(`Attempting to generate ${this.PlaylistGenerators.length} playlists...`);
+			var allPlaylists = await Promise.all(this.PlaylistGenerators.map(e=>e.generate())).then((values)=>values);
+			var masterPlaylist = new Playlist();
+			while (allPlaylists && allPlaylists.length > 0) {
+				masterPlaylist.merge(allPlaylists.shift())
+			}
+			return masterPlaylist;
+		}
+	}
+	
 	async function get_JSON(url) { let response = await fetch(url); let data = await response.json(); return data; }
-	// this was working at one point, then they implemented cors issues so i had to go thru justcors.com
-	async function retreive_audio_src2(key) { return JSON.parse(await (await fetch(`https://www.dlmixcloud.com/ajax.php/?url=https://www.mixcloud.com${key}`)).text())['url']; }
+	
 	async function retreive_audio_src(key) { 
 		var url = `https://justcors.com/l_n1ehx3zipc/https://www.dlmixcloud.com/ajax.php/?url=https://www.mixcloud.com${key}`;
 		var response = await fetch(url)
@@ -129,191 +274,18 @@
 		var value = resulting_json['url'];
 		return value;
 	}
-	function get_random_song_idx(){
-		// Loads a random song index from the playlist queue, tries to not replay the last DONT_REPLAY_FROM_THE_LAST_X_SONGS songs.
-		const DONT_REPLAY_FROM_THE_LAST_X_SONGS = 5;
-		var r = Math.floor(Math.random() * PLAYLIST_SONGS.length);
-		if (PLAYER_HISTORY_STACK.length < DONT_REPLAY_FROM_THE_LAST_X_SONGS) {
-			// no option to play a diff song.
-			return r;
-		}
-		while (r in PLAYER_HISTORY_STACK.slice(-DONT_REPLAY_FROM_THE_LAST_X_SONGS)) {
-			r = Math.floor(Math.random() * PLAYLIST_SONGS.length);
-		}
-		return r;
-	}
-	function get_next_song_idx(){
-		// Loads up the next song from the playlist queue.
-		if (PLAYER_HISTORY_STACK.length == 0) {
-			// no option to play a diff song.
-			return 0;
-		}
-		return (PLAYER_HISTORY_STACK[0] + 1) % PLAYLIST_SONGS.length;
-	}
-	function mark_favorited_timestamp(){
-		// adds a way to mark down timestamps of specific songs so that we can keep track of favorite songs etc.
-		var audio = document.querySelector('audio');
-		var curr_timestamp = audio.currentTime;
-		if (PLAYER_HISTORY_STACK.length == 0) {
-			return;
-		}
-		var curr_song = PLAYLIST_SONGS[PLAYER_HISTORY_STACK[0]];
-		var timestamp_list = document.querySelector('#timestamps_list');
-		var li = document.createElement("li");
-		li.innerText = `${curr_song.name} @ ${sec_to_human_readable_timestamp(curr_timestamp)}`;
-		timestamp_list.appendChild(li);
-	}
+	
 	function sec_to_human_readable_timestamp(sec) {
 		return `${String(parseInt(sec/3600)).padStart(2, '0')}:${String(parseInt((sec % 3600)/60)).padStart(2, '0')}:${parseInt(sec) % 60}`;
 	}
-	function load_selected_song(){
-		var selected_val = document.querySelector('select').value;
-		var i = 0;
-		while (i < PLAYLIST_SONGS.length) {
-			if (PLAYLIST_SONGS[i].key == selected_val) {
-				load_song_from_index(i);
-				return;
-			}
-			++i;
-		}
-	}
-	/**
-	 * PREREQ: update_playlist_songs has been run
-	 * @param next_song, <int> the index from the PLAYLIST_SONGS to use, <null>=0, <str> the song key from the PLAYLIST_SONGS to use.
-	 */
-	async function load_song_from_index(next_song=null){
-		if (PLAYLIST_SONGS.length == 0) {
-			return;
-		}
-		// is run when we want to start loading a new song into the player
-		if (typeof(next_song) == 'number') {
-			next_song = (parseInt(next_song) || 0) % PLAYLIST_SONGS.length;
-		} else if (typeof(next_song) == 'string') {
-			var s = next_song;
-			next_song = 0;
-			while (next_song < PLAYLIST_SONGS.length) {
-				if (PLAYLIST_SONGS[next_song].name == s || PLAYLIST_SONGS[next_song].key == s) {
-					break
-				}
-				++next_song;
-			}
-			if (next_song == PLAYLIST_SONGS.length) {
-				next_song = get_random_song_idx();
-			}
-		} else {
-			next_song = document.querySelector('#shuffle_button').innerText == "🔀" ? get_random_song_idx() : get_next_song_idx();
-		}
-		// now next_song is an int.
-		if (PLAYLIST_SONGS[next_song].src == undefined) {
-			PLAYLIST_SONGS[next_song].src = await retreive_audio_src(PLAYLIST_SONGS[next_song].key);
-		}
-		
-		document.title = "Loading next song...";
-		
-		// now we have the src for this song... its ready to be loaded
-		await update_player_src(PLAYLIST_SONGS[next_song].src);
-		// TODO: UPDATE UI
-		// set currently playing in player history
-		PLAYER_HISTORY_STACK.splice(0, 0, next_song);
-		var dropdown_selections = document.getElementById('songlist_selector');
-		dropdown_selections.value = PLAYLIST_SONGS[next_song].key;
-
-		// update played history tab
-		update_played_history_ui();
-
-		// update title of webpage
-		document.title = PLAYLIST_SONGS[next_song].name;
-	}
-	function update_played_history_ui() {
-		var history_list = document.querySelector('#played_history_list');
-		var ul = document.createElement("ul");
-		ul.setAttribute('id','played_history_list');
-		PLAYER_HISTORY_STACK.forEach(e=>{
-			var li = document.createElement("li"); 
-			li.innerText = `${PLAYLIST_SONGS[e].name}`;
-			ul.appendChild(li);
-		});
-		history_list.innerHTML = ul.innerHTML;
-	}
-	/**
-	 * @param src: <str> the audio source string to be played
-	 */
-	async function update_player_src(src) {
-		// TODO update our players src
-		var audio = document.querySelector('audio');
-		var source = document.querySelector('source');
-		if (!source) { source = document.createElement('source'); }
-		source.setAttribute('src', src);
-		try{
-			audio.load();
-			try{audio.play();audio.muted = false;}catch(err){}
-		}catch(err){}
-	}
-	function update_dropdown_with_current_songs(){
-		// TODO: SORT BY PLAYLIST_SONGS?
-		var i = 0;
-		var dropdown_selections = document.getElementById('songlist_selector').options;
-		while (dropdown_selections.length > 0) {
-			dropdown_selections[0].remove();
-		}
-		// Sort by name, then by key
-		PLAYLIST_SONGS.sort((a,b) => (a.name.toLowerCase() > b.name.toLowerCase()) ? 1 : ((b.name.toLowerCase() > a.name.toLowerCase()) ? -1 : (a.key.toLowerCase() > b.key.toLowerCase()) ? 1 : ((b.key.toLowerCase() > a.key.toLowerCase()) ? -1 : 0)));
-		while (i < PLAYLIST_SONGS.length) {
-			dropdown_selections.add(new Option(PLAYLIST_SONGS[i].name,PLAYLIST_SONGS[i].key));
-			++i;
-		}
-		
-	}
-	/*If using a browser with persistant data, this will allow for us to keep the timestamps persistant*/
-	function load_timestamps() {
-		var timestamps = JSON.parse(localStorage.getItem('TIMESTAMPS'));
-		if (timestamps == null) {
-			return;
-		}
-		var timestamp_list = document.querySelector('#timestamps_list');
-		timestamps.forEach(ts => {
-			var li = document.createElement("li");
-			li.innerText = ts;
-			timestamp_list.appendChild(li);
-		});
-	}
-	function save_timestamps() {
-		var arr = Array.from(new Set(Array.from(document.getElementById('timestamps_list').childNodes).map(e=>e.innerText)));
-		if (arr.length == 0) {
-			localStorage.removeItem('TIMESTAMPS');
-		} else {
-			localStorage.setItem('TIMESTAMPS',JSON.stringify(arr));
-		}
-		
-	}
-	function clear_timestamps() {
-		var timestamps = document.getElementById('timestamps_list').childNodes;
-		if (timestamps.length == 0) {return;}
-		if (confirm("Are you sure you want to clear and reset all of the timestamps?")) {
-			var removed = JSON.stringify(Array.from(timestamps).map(e=>e.innerText));
-			while (timestamps.length) {
-				timestamps[0].remove();
-			}
-			localStorage.removeItem('TIMESTAMPS');
-			console.log(removed);
-			navigator.clipboard.writeText(removed);
-			alert("Console and current clipboard contents should contain JSON of removed data!");
-		}
-	}
+	
 	window.onload = async function() {
-		document.querySelector('#shuffle_button').addEventListener('click',function(){document.querySelector('#shuffle_button').innerText = document.querySelector('#shuffle_button').innerText == "🔀" ? "🔃" : "🔀"}, false);
-		load_timestamps();
-		await update_playlist_songs();
-		update_dropdown_with_current_songs();
-		load_song_from_index(get_random_song_idx());
-		document.querySelector('audio').addEventListener('ended',function(){ if (! document.querySelector('audio').seeking) load_song_from_index()},false);
-		document.querySelector('#songlist_selector').addEventListener('change',load_selected_song, false);
-		document.querySelector('#skip').addEventListener('click',load_song_from_index, false);
-		document.querySelector('#mark_timestamp').addEventListener('click',mark_favorited_timestamp, false);
-		document.querySelector('#clear_timestamps').addEventListener('click',clear_timestamps, false);
-	}
-	window.onunload = function() {
-		save_timestamps();
+		var pl = new PlaylistGeneratorManager();
+		pl.addPlaylistGenerator('rons podcast #', function(searchObj) {return (/RONS.*?Podcast.*?\d{3,4}/i).exec(searchObj['name']) !== null});
+		pl.addPlaylistGenerator('Lys_InTheMix', function(searchObj){return searchObj['user']['username'].toLowerCase() == "lys_"});
+		pl.addPlaylistGenerator('Liquid DnB Mix - Vol', function(searchObj) {return (/Liquid DnB Mix - Vol 6[12469]/i).exec(searchObj['name']) !== null});
+		pl = await manager.generateMasterPlaylist();
+
 	}
 </script>
 </head>
@@ -323,11 +295,13 @@
 		&nbsp;<button id="shuffle_button" >🔀</button>
 		&nbsp;<button id="skip">⏭</button>
 		&nbsp;<button id="mark_timestamp"">⭐</button>
+
 	</h4>
 	<audio controls autoplay id="player" height="55px" style="width:90%"><source src="data:audio/ogg;base64,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GEMppJRSSimllFJKKaWUUkoppZRSSimllFJKKaWUUkgppZRSSimllFJKKaWUUkoppZRSSimllFJKKaWUUkoppZRSSimllFJKKaWUUkqppJRSSimllFJKKaWUUkoppZRSSimllFJKKaWUUkoppZRSSimllFJKKaWUUkoppZRSSimllFJKKaWUUkoppZRSSimllFJKKaWUUkoppZRSSimllFJKKaWUUkoppZRSSimllFJKKaWUUkoppZRSSimllFJKKaWUUkoppZRSSimllFJKKaWUUkoppZRSSimllFJKKaWUUkoppZRSSimllFJKKaWUUkoppZRSSimllFJKKaWUUkoppZRSSimllFJKKaWUUkoppZRSSimllFJKKaWUUkoppZRSSimllFJKKaWUUkoplVJKKaWUUkoppZRSSimllFJKKaWUUkoppZRSSimllFJKKaWUUkoppZRSSimllFJKKaWUUkoppZRSSimllFJKKaWUUkoppZRSSimllFJKKaWUUkoppZRSCgCQinAAkHowoQwUGrISAEgFAACMUUopxpyDEDHmGGPQSSgpYsw5xhyUklLlHIQQUmktt8o5CCGk1FJtmXNSWosx5hgz56SkFFvNOYdSUoux5ppr7qS0VmuuNedaWqs115xzzbm0FmuuOdecc8sx15xzzjnnGHPOOeecc84FAOA0OACAHtiwOsJJ0VhgoSErAYBUAAACGaUYc8456BBSjDnnHIQQIoUYc845CCFUjDnnHHQQQqgYc8w5CCGEkDnnHIQQQgghcw466CCEEEIHHYQQQgihlM5BCCGEEEooIYQQQgghhBA6CCGEEEIIIYQQQgghhFJKCCGEEEIJoZRQAABggQMAQIANqyOcFI0FFhqyEgAAAgCAHJagUs6EQY5Bjw1BylEzDUJMOdGZYk5qMxVTkDkQnXQSGWpB2V4yCwAAgCAAIMAEEBggKPhCCIgxAABBiMwQCYVVsMCgDBoc5gHAA0SERACQmKBIu7iALgNc0MVdB0IIQhCCWBxAAQk4OOGGJ97whBucoFNU6iAAAAAAAAwA4AEA4KAAIiKaq7C4wMjQ2ODo8AgAAAAAABYA+AAAOD6AiIjmKiwuMDI0Njg6PAIAAAAAAAAAAICAgAAAAAAAQAAAAICAT2dnUwAEAAAAAAAAAADwOoUqAgAAAJxxaEsBAQA=" type="audio/mp4" id="player_source"></audio>
+
 	<h4>Played history:</h4>
 	<ul id="played_history_list"></ul>
-	<p>TIMESTAMPS:&nbsp;<button id="clear_timestamps">🆑</button></p>
+	<p>TIMESTAMPS:</p>
 	<ul id="timestamps_list"></ul>
 </body>
 </html>

@@ -2,10 +2,6 @@
 <html>
 <head>
 <script>
-	// This is designed to play specific songs from mixcloud...
-	// I know i overuse loops and i should just be using indexes of the PLAYLIST_SONGS as keys, but i have future plans that might not allow that to be used.
-
-	
 	var PLAYER_HISTORY_STACK = [];
 	var PLAYLIST_SONGS = [];
 	async function load_rons_songs() {
@@ -19,7 +15,7 @@
 					let m;
 					if ((m = ronsreg.exec(search_results['data'][i]['name'])) !== null) {
 						PLAYLIST_SONGS.push({
-							name:search_results['data'][i]['name'],
+							name:search_results['data'][i]['name'].replace(/RONS:? Podcast #?(\w+)/gmi, `RONS: Podcast #$1`),
 							key:search_results['data'][i]['key']
 							});
 					}
@@ -40,8 +36,13 @@
 			if ('data' in search_results) {
 				for (var i in search_results['data']) {
 					if (search_results['data'][i]['user']['username'].toLowerCase() == "lys_") {
+						if (search_results['data'][i]['key'].toLowerCase().includes("augustsummermix2019")) {
+							search_results['data'][i]['name'] = "Lys: August Summer 2019";
+						} else if (search_results['data'][i]['key'].toLowerCase().includes("bienvenue-%c3%a0-mon-mix-dhiver-2019")) {
+							search_results['data'][i]['name'] = "Lys: Winter mix 2019"
+						}
 						PLAYLIST_SONGS.push({
-							name:search_results['data'][i]['name'],
+							name:search_results['data'][i]['name'].replace(/lys[_-]{1,2}/gmi, "Lys: "),
 							key:search_results['data'][i]['key']
 							});
 					}
@@ -55,7 +56,7 @@
 		}
 	}
 	async function load_djmighty_songs() {
-		const ronsreg = /Liquid DnB Mix - Vol 6[12469]/i;
+		const djmightyreg = /Liquid DnB Mix - Vol 6[12469]/i;
 		var search_queue = ["https://api.mixcloud.com/search/?limit=100&type=cloudcast&q=Liquid%20DnB%20Mix%20-%20Vol"];
 		while (search_queue.length > 0) {
 			var search_url = search_queue.pop();
@@ -63,9 +64,9 @@
 			if ('data' in search_results) {
 				for (var i in search_results['data']) {
 					let m;
-					if ((m = ronsreg.exec(search_results['data'][i]['name'])) !== null) {
+					if ((m = djmightyreg.exec(search_results['data'][i]['name'])) !== null) {
 						PLAYLIST_SONGS.push({
-							name:search_results['data'][i]['name'],
+							name:search_results['data'][i]['name'].replace(" - ", ": "),
 							key:search_results['data'][i]['key']
 							});
 					}
@@ -109,7 +110,7 @@
 			
 		var i = PLAYLIST_SONGS.length - 1;
 		while (i >= 0) {
-			PLAYLIST_SONGS[i].name = fix_name(PLAYLIST_SONGS[i].name, PLAYLIST_SONGS[i].key);
+			//PLAYLIST_SONGS[i].name = fix_name(PLAYLIST_SONGS[i].name, PLAYLIST_SONGS[i].key);
 			if (PLAYLIST_SONGS[i].name in BAD_SONGS || PLAYLIST_SONGS[i].key in BAD_SONGS) {
 				PLAYLIST_SONGS = PLAYLIST_SONGS.splice(i, 1);
 			}
@@ -119,9 +120,8 @@
 		return true;
 	}
 	async function get_JSON(url) { let response = await fetch(url); let data = await response.json(); return data; }
-	// this was working at one point, then they implemented cors issues so i had to go thru justcors.com
-	async function retreive_audio_src2(key) { return JSON.parse(await (await fetch(`https://www.dlmixcloud.com/ajax.php/?url=https://www.mixcloud.com${key}`)).text())['url']; }
 	async function retreive_audio_src(key) { 
+		// Attempts to get the url for the src of the given mixcloud key
 		var url = `https://justcors.com/l_n1ehx3zipc/https://www.dlmixcloud.com/ajax.php/?url=https://www.mixcloud.com${key}`;
 		var response = await fetch(url)
 		var result_text = await response.text()
@@ -143,7 +143,7 @@
 		return r;
 	}
 	function get_next_song_idx(){
-		// Loads up the next song from the playlist queue.
+		// Loads up the next song from the playlist queue in a sequential order.
 		if (PLAYER_HISTORY_STACK.length == 0) {
 			// no option to play a diff song.
 			return 0;
@@ -179,6 +179,7 @@
 	}
 	/**
 	 * PREREQ: update_playlist_songs has been run
+	 * If not given explicitly, gets the proper playlist index number, attempts to play that song, and updates the UI. 
 	 * @param next_song, <int> the index from the PLAYLIST_SONGS to use, <null>=0, <str> the song key from the PLAYLIST_SONGS to use.
 	 */
 	async function load_song_from_index(next_song=null){
@@ -203,15 +204,23 @@
 		} else {
 			next_song = document.querySelector('#shuffle_button').innerText == "🔀" ? get_random_song_idx() : get_next_song_idx();
 		}
+		document.title = "Loading next song...";
 		// now next_song is an int.
 		if (PLAYLIST_SONGS[next_song].src == undefined) {
-			PLAYLIST_SONGS[next_song].src = await retreive_audio_src(PLAYLIST_SONGS[next_song].key);
+			do {
+				try {
+					PLAYLIST_SONGS[next_song].src = await retreive_audio_src(PLAYLIST_SONGS[next_song].key);
+				} catch (err) {
+					console.log(`Error while attempting to get src from song index #${next_song}, key = '${PLAYLIST_SONGS[next_song].key}', name = '${PLAYLIST_SONGS[next_song].name}', skipping to next index!`);
+					next_song++;
+				}
+			} while (PLAYLIST_SONGS[next_song].src == undefined)
 		}
-		
-		document.title = "Loading next song...";
-		
+
 		// now we have the src for this song... its ready to be loaded
 		await update_player_src(PLAYLIST_SONGS[next_song].src);
+		
+		
 		// TODO: UPDATE UI
 		// set currently playing in player history
 		PLAYER_HISTORY_STACK.splice(0, 0, next_song);
@@ -239,18 +248,20 @@
 	 * @param src: <str> the audio source string to be played
 	 */
 	async function update_player_src(src) {
-		// TODO update our players src
+		if (src == null) {return;}
 		var audio = document.querySelector('audio');
 		var source = document.querySelector('source');
-		if (!source) { source = document.createElement('source'); }
 		source.setAttribute('src', src);
 		try{
 			audio.load();
 			try{audio.play();audio.muted = false;}catch(err){}
+			update_persistant('LAST_SONG_SRC', src, 0);	// save the src for the quickstart
 		}catch(err){}
 	}
+	function handle_audio_load_error(err) {
+		
+	}
 	function update_dropdown_with_current_songs(){
-		// TODO: SORT BY PLAYLIST_SONGS?
 		var i = 0;
 		var dropdown_selections = document.getElementById('songlist_selector').options;
 		while (dropdown_selections.length > 0) {
@@ -264,9 +275,50 @@
 		}
 		
 	}
-	/*If using a browser with persistant data, this will allow for us to keep the timestamps persistant*/
+
+
+	/**
+	 * @param key <str> the localStorage key to update
+	 * @param data <?> the data.
+	 * @param mode <int>, -1=delete, 0=overwrite, 1=append (if [existing type is array, and mode == 1])
+	 */
+	function update_persistant(key, data=null, mode=0) {
+		if (mode in [-1, 0]) {
+			localStorage.removeItem(key);
+		}
+		if (mode in [0, 1] && data != null) {
+			var temp = JSON.parse(localStorage.getItem(key));
+			if (Array.isArray(temp)) {
+				temp = temp.concat(data);
+			} else {
+				temp = data;
+			}
+			localStorage.setItem(key, JSON.stringify(temp));
+		}
+	}
+	function load_persistant(key){
+		return JSON.parse(localStorage.getItem(key));
+	}
+	
+	/* Attempts to load a src value from the localStorage so that we can get music instantly instead of having to wait for the full dynamic load of the song list */
+	function start_quick_start_song(){
+		try {
+			var src = load_persistant('LAST_SONG_SRC');
+			if (src) {update_player_src(src);}
+		} catch (err) {
+			console.log("Unable to load the last song src, will have to wait for full song list to load.");
+		}
+	}
+
+	/*If using a browser with persistant data, this will allow for us to keep the persistant values*/
+	function load_volume() {
+		document.getElementById("player").volume = load_persistant('VOLUME');
+	}
+	function save_volume() {
+		update_persistant('VOLUME',document.getElementById("player").volume, 0);
+	}
 	function load_timestamps() {
-		var timestamps = JSON.parse(localStorage.getItem('TIMESTAMPS'));
+		var timestamps = load_persistant('TIMESTAMPS');
 		if (timestamps == null) {
 			return;
 		}
@@ -279,12 +331,7 @@
 	}
 	function save_timestamps() {
 		var arr = Array.from(new Set(Array.from(document.getElementById('timestamps_list').childNodes).map(e=>e.innerText)));
-		if (arr.length == 0) {
-			localStorage.removeItem('TIMESTAMPS');
-		} else {
-			localStorage.setItem('TIMESTAMPS',JSON.stringify(arr));
-		}
-		
+		update_persistant('TIMESTAMPS', arr, arr.length == 0? 0 : 1)
 	}
 	function clear_timestamps() {
 		var timestamps = document.getElementById('timestamps_list').childNodes;
@@ -294,25 +341,31 @@
 			while (timestamps.length) {
 				timestamps[0].remove();
 			}
-			localStorage.removeItem('TIMESTAMPS');
+			update_persistant('TIMESTAMPS', null, -1);
+			//localStorage.removeItem('TIMESTAMPS');
 			console.log(removed);
 			navigator.clipboard.writeText(removed);
 			alert("Console and current clipboard contents should contain JSON of removed data!");
 		}
 	}
 	window.onload = async function() {
-		document.querySelector('#shuffle_button').addEventListener('click',function(){document.querySelector('#shuffle_button').innerText = document.querySelector('#shuffle_button').innerText == "🔀" ? "🔃" : "🔀"}, false);
+                load_volume();
+		document.querySelector('#shuffle_button').addEventListener('click', function(){document.querySelector('#shuffle_button').innerText = document.querySelector('#shuffle_button').innerText == "🔀" ? "🔃" : "🔀"}, false);
+		document.querySelector('#player_source').addEventListener('error', function(err){ console.log(`Failed to load source value of ${this.src}`); }, false);	
+		start_quick_start_song();
 		load_timestamps();
 		await update_playlist_songs();
 		update_dropdown_with_current_songs();
 		load_song_from_index(get_random_song_idx());
-		document.querySelector('audio').addEventListener('ended',function(){ if (! document.querySelector('audio').seeking) load_song_from_index()},false);
-		document.querySelector('#songlist_selector').addEventListener('change',load_selected_song, false);
-		document.querySelector('#skip').addEventListener('click',load_song_from_index, false);
-		document.querySelector('#mark_timestamp').addEventListener('click',mark_favorited_timestamp, false);
-		document.querySelector('#clear_timestamps').addEventListener('click',clear_timestamps, false);
+		document.querySelector('audio').addEventListener('ended', function(){ if (! document.querySelector('audio').seeking) load_song_from_index()}, false);
+		document.querySelector('#songlist_selector').addEventListener('change', load_selected_song, false);
+		document.querySelector('#skip').addEventListener('click', load_song_from_index, false);
+		document.querySelector('#mark_timestamp').addEventListener('click', mark_favorited_timestamp, false);
+		document.querySelector('#clear_timestamps').addEventListener('click', clear_timestamps, false);
+		document.querySelector('#player_source').addEventListener('error', function(err){ if (! document.querySelector('audio').seeking) load_song_from_index()}, false);
 	}
 	window.onunload = function() {
+		save_volume();
 		save_timestamps();
 	}
 </script>
@@ -322,7 +375,7 @@
 		Currently playing:&nbsp;<select id="songlist_selector"><option>Loading...</option></select>
 		&nbsp;<button id="shuffle_button" >🔀</button>
 		&nbsp;<button id="skip">⏭</button>
-		&nbsp;<button id="mark_timestamp"">⭐</button>
+		&nbsp;<button id="mark_timestamp">⭐</button>
 	</h4>
 	<audio controls autoplay id="player" height="55px" style="width:90%"><source src="data:audio/ogg;base64,T2dnUwACAAAAAAAAAADwOoUqAAAAAJ5xYnkBHgF2b3JiaXMAAAAAAUSsAAAAAAAAgLsAAAAAAAC4AU9nZ1MAAAAAAAAAAAAA8DqFKgEAAAC237wmD2P/////////////////MgN2b3JiaXM1AAAAWGlwaC5PcmcgbGliVm9yYmlzIEkgMjAxODAzMTYgKE5vdyAxMDAlIGZld2VyIHNoZWxscykBAAAAGgAAAEVOQ09ERVI9VHdpc3RlZFdhdmUgT25saW5lAQV2b3JiaXMfQkNWAQAAAQAYY1QpRplS0kqJGXOUMUaZYpJKiaWEFkJInXMUU6k515xrrLm1IIQQGlNQKQWZUo5SaRljkCkFmVIQS0kldBI6J51jEFtJwdaYa4tBthyEDZpSTCnElFKKQggZU4wpxZRSSkIHJXQOOuYcU45KKEG4nHOrtZaWY4updJJK5yRkTEJIKYWSSgelU05CSDWW1lIpHXNSUmpB6CCEEEK2IIQNgtCQVQAAAQDAQBAasgoAUAAAEIqhGIoChIasAgAyAAAEoCiO4iiOIzmSY0kWEBqyCgAAAgAQAADAcBRJkRTJsSRL0ixL00RRVX3VNlVV9nVd13Vd13UgNGQVAAABAEBIp5mlGiDCDGQYCA1ZBQAgAAAARijCEANCQ1YBAAABAABiKDmIJrTmfHOOg2Y5aCrF5nRwItXmSW4q5uacc845J5tzxjjnnHOKcmYxaCa05pxzEoNmKWgmtOacc57E5kFrqrTmnHPGOaeDcUYY55xzmrTmQWo21uaccxa0pjlqLsXmnHMi5eZJbS7V5pxzzjnnnHPOOeecc6oXp3NwTjjnnHOi9uZabkIX55xzPhmne3NCOOecc84555xzzjnnnHOC0JBVAAAQAABBGDaGcacgSJ+jgRhFiGnIpAfdo8MkaAxyCqlHo6ORUuoglFTGSSmdIDRkFQAACAAAIYQUUkghhRRSSCGFFFKIIYYYYsgpp5yCCiqppKKKMsoss8wyyyyzzDLrsLPOOuwwxBBDDK20EktNtdVYY62555xrDtJaaa211koppZRSSikIDVkFAIAAABAIGWSQQUYhhRRSiCGmnHLKKaigAkJDVgEAgAAAAgAAADzJc0RHdERHdERHdERHdETHczxHlERJlERJtEzL1ExPFVXVlV1b1mXd9m1hF3bd93Xf93Xj14VhWZZlWZZlWZZlWZZlWZZlWYLQkFUAAAgAAIAQQgghhRRSSCGlGGPMMeegk1BCIDRkFQAACAAgAAAAwFEcxXEkR3IkyZIsSZM0S7M8zdM8TfREURRN01RFV3RF3bRF2ZRN13RN2XRVWbVdWbZt2dZtX5Zt3/d93/d93/d93/d93/d1HQgNWQUASAAA6EiOpEiKpEiO4ziSJAGhIasAABkAAAEAKIqjOI7jSJIkSZakSZ7lWaJmaqZneqqoAqEhqwAAQAAAAQAAAAAAKJriKabiKaLiOaIjSqJlWqKmaq4om7Lruq7ruq7ruq7ruq7ruq7ruq7ruq7ruq7ruq7ruq7ruq7rui4QGrIKAJAAANCRHMmRHEmRFEmRHMkBQkNWAQAyAAACAHAMx5AUybEsS9M8zdM8TfRET/RMTxVd0QVCQ1YBAIAAAAIAAAAAADAkw1IsR3M0SZRUS7VUTbVUSxVVT1VVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVTVN0zRNIDRkJQAABADAYo3B5SAhJSXl3hDCEJOeMSYhtV4hBJGS3jEGFYOeMqIMct5C4xCDHggNWREARAEAAMYgxxBzyDlHqZMSOeeodJQa5xyljlJnKcWYYs0oldhSrI1zjlJHraOUYiwtdpRSjanGAgAAAhwAAAIshEJDVgQAUQAAhDFIKaQUYow5p5xDjCnnmHOGMeYcc44556B0UirnnHROSsQYc445p5xzUjonlXNOSiehAACAAAcAgAALodCQFQFAnACAQZI8T/I0UZQ0TxRFU3RdUTRd1/I81fRMU1U90VRVU1Vt2VRVWZY8zzQ901RVzzRV1VRVWTZVVZZFVdVt03V123RV3ZZt2/ddWxZ2UVVt3VRd2zdV1/Zd2fZ9WdZ1Y/I8VfVM03U903Rl1XVtW3VdXfdMU5ZN15Vl03Vt25VlXXdl2fc103Rd01Vl2XRd2XZlV7ddWfZ903WF35VlX1dlWRh2XfeFW9eV5XRd3VdlVzdWWfZ9W9eF4dZ1YZk8T1U903RdzzRdV3VdX1dd19Y105Rl03Vt2VRdWXZl2fddV9Z1zzRl2XRd2zZdV5ZdWfZ9V5Z13XRdX1dlWfhVV/Z1WdeV4dZt4Tdd1/dVWfaFV5Z14dZ1Ybl1XRg+VfV9U3aF4XRl39eF31luXTiW0XV9YZVt4VhlWTl+4ViW3feVZXRdX1ht2RhWWRaGX/id5fZ943h1XRlu3efMuu8Mx++k+8rT1W1jmX3dWWZfd47hGDq/8OOpqq+brisMpywLv+3rxrP7vrKMruv7qiwLvyrbwrHrvvP8vrAso+z6wmrLwrDatjHcvm4sv3Acy2vryjHrvlG2dXxfeArD83R1XXlmXcf2dXTjRzh+ygAAgAEHAIAAE8pAoSErAoA4AQCPJImiZFmiKFmWKIqm6LqiaLqupGmmqWmeaVqaZ5qmaaqyKZquLGmaaVqeZpqap5mmaJqua5qmrIqmKcumasqyaZqy7LqybbuubNuiacqyaZqybJqmLLuyq9uu7Oq6pFmmqXmeaWqeZ5qmasqyaZquq3meanqeaKqeKKqqaqqqraqqLFueZ5qa6KmmJ4qqaqqmrZqqKsumqtqyaaq2bKqqbbuq7Pqybeu6aaqybaqmLZuqatuu7OqyLNu6L2maaWqeZ5qa55mmaZqybJqqK1uep5qeKKqq5ommaqqqLJumqsqW55mqJ4qq6omea5qqKsumatqqaZq2bKqqLZumKsuubfu+68qybqqqbJuqauumasqybMu+78qq7oqmKcumqtqyaaqyLduy78uyrPuiacqyaaqybaqqLsuybRuzbPu6aJqybaqmLZuqKtuyLfu6LNu678qub6uqrOuyLfu67vqucOu6MLyybPuqrPq6K9u6b+sy2/Z9RNOUZVM1bdtUVVl2Zdn2Zdv2fdE0bVtVVVs2TdW2ZVn2fVm2bWE0Tdk2VVXWTdW0bVmWbWG2ZeF2Zdm3ZVv2ddeVdV/XfePXZd3murLty7Kt+6qr+rbu+8Jw667wCgAAGHAAAAgwoQwUGrISAIgCAACMYYwxCI1SzjkHoVHKOecgZM5BCCGVzDkIIZSSOQehlJQy5yCUklIIoZSUWgshlJRSawUAABQ4AAAE2KApsThAoSErAYBUAACD41iW55miatqyY0meJ4qqqaq27UiW54miaaqqbVueJ4qmqaqu6+ua54miaaqq6+q6aJqmqaqu67q6Lpqiqaqq67qyrpumqqquK7uy7Oumqqqq68quLPvCqrquK8uybevCsKqu68qybNu2b9y6ruu+7/vCka3rui78wjEMRwEA4AkOAEAFNqyOcFI0FlhoyEoAIAMAgDAGIYMQQgYhhJBSSiGllBIAADDgAAAQYEIZKDRkRQAQJwAAGEMppJRSSimllFJKKaWUUkoppZRSSimllFJKKaWUUkgppZRSSimllFJKKaWUUkoppZRSSimllFJKKaWUUkoppZRSSimllFJKKaWUUkqppJRSSimllFJKKaWUUkoppZRSSimllFJKKaWUUkoppZRSSimllFJKKaWUUkoppZRSSimllFJKKaWUUkoppZRSSimllFJKKaWUUkoppZRSSimllFJKKaWUUkoppZRSSimllFJKKaWUUkoppZRSSimllFJKKaWUUkoppZRSSimllFJKKaWUUkoppZRSSimllFJKKaWUUkoppZRSSimllFJKKaWUUkoppZRSSimllFJKKaWUUkoppZRSSimllFJKKaWUUkoppZRSSimllFJKKaWUUkoppZRSSimllFJKKaWUUkoplVJKKaWUUkoppZRSSimllFJKKaWUUkoppZRSSimllFJKKaWUUkoppZRSSimllFJKKaWUUkoppZRSSimllFJKKaWUUkoppZRSSimllFJKKaWUUkoppZRSCgCQinAAkHowoQwUGrISAEgFAACMUUopxpyDEDHmGGPQSSgpYsw5xhyUklLlHIQQUmktt8o5CCGk1FJtmXNSWosx5hgz56SkFFvNOYdSUoux5ppr7qS0VmuuNedaWqs115xzzbm0FmuuOdecc8sx15xzzjnnGHPOOeecc84FAOA0OACAHtiwOsJJ0VhgoSErAYBUAAACGaUYc8456BBSjDnnHIQQIoUYc845CCFUjDnnHHQQQqgYc8w5CCGEkDnnHIQQQgghcw466CCEEEIHHYQQQgihlM5BCCGEEEooIYQQQgghhBA6CCGEEEIIIYQQQgghhFJKCCGEEEIJoZRQAABggQMAQIANqyOcFI0FFhqyEgAAAgCAHJagUs6EQY5Bjw1BylEzDUJMOdGZYk5qMxVTkDkQnXQSGWpB2V4yCwAAgCAAIMAEEBggKPhCCIgxAABBiMwQCYVVsMCgDBoc5gHAA0SERACQmKBIu7iALgNc0MVdB0IIQhCCWBxAAQk4OOGGJ97whBucoFNU6iAAAAAAAAwA4AEA4KAAIiKaq7C4wMjQ2ODo8AgAAAAAABYA+AAAOD6AiIjmKiwuMDI0Njg6PAIAAAAAAAAAAICAgAAAAAAAQAAAAICAT2dnUwAEAAAAAAAAAADwOoUqAgAAAJxxaEsBAQA=" type="audio/mp4" id="player_source"></audio>
 	<h4>Played history:</h4>

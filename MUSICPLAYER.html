@@ -71,6 +71,7 @@
 			}
 		}
 	}
+
 	async function load_djmighty_songs(debug=null) {
 		const djmightyreg = /Liquid DnB Mix - Vol 6[12469]/i;
 		var search_queue = ["https://api.mixcloud.com/search/?limit=100&type=cloudcast&q=Liquid%20DnB%20Mix%20-%20Vol"];
@@ -130,7 +131,7 @@
 	async function get_JSON(url) { write2log(`get_JSON(${url})`); let response = await fetch(url); let data = await response.json(); write2log(null); return data; }
 	async function retreive_audio_src(key) { 
 		write2log(`retreive_audio_src(${key})`);
-		// Attempts to get the url for the src of the given mixcloud key
+   // Attempts to get the url for the src of the given mixcloud key
 		var url = `https://justcors.com/l_n1ehx3zipc/https://www.dlmixcloud.com/ajax.php/?url=https://www.mixcloud.com${key}`;
 		var response = await fetch(url)
 		var result_text = await response.text()

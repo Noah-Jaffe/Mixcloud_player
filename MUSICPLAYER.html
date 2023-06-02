@@ -3,120 +3,118 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>MUSICPLAYER</title>
 <style>
 	button { font-size: 300%; padding: 2px 2px 2px 2px; background-color: rgba(0,0,0,0); border: none; }
 	button:hover { background-color: gray; }
 	#clear_timestamps { font-size: 100%; }
-	select { font-size: 24pt;}
+	select { font-size: 24pt; width:90%; max-width:80%; }
+	option { font-size: 18pt; }
 	audio { background-color: rgba(0,0,0,0.00); width: 90%; }
 	audio::-webkit-media-controls-play-button { transform-origin: center center; transform: scale(2,2.5); }
+	#log { font-size:10pt; word-wrap:break-word; }
 </style>
 <script>
 	var PLAYER_HISTORY_STACK = [];
 	var PLAYLIST_SONGS = [];
-	async function load_rons_songs(debug=null) {
-		const ronsreg = /RONS.*?Podcast.*?\d{3,4}/i; //([6]\d{2}|\d{4,}|3[7-0][0-9])/i;
-		var search_queue = ["https://api.mixcloud.com/search/?limit=100&q=rons%20podcast%20%23&type=cloudcast"];
-		if (debug) { debug.innerText = `${PLAYLIST_SONGS.length} songs loaded`;}
-		while (search_queue.length > 0) {
-			if (debug) { debug.innerText = debug.innerText.replace(new RegExp('(\\d+) songs loaded(\.*)', 'gm'), `${PLAYLIST_SONGS.length} songs loaded $2.`); }
-			var search_url = search_queue.pop();
-			var search_results = await get_JSON(search_url);
-			if ('data' in search_results) {
-				for (var i in search_results['data']) {
-					let m;
-					if ((m = ronsreg.exec(search_results['data'][i]['name'])) !== null) {
-						PLAYLIST_SONGS.push({
-							name:search_results['data'][i]['name'].replace(/RONS:? Podcast #?(\w+)/gmi, `RONS: Podcast #$1`),
-							key:search_results['data'][i]['key']
-							});
-							if (debug) { debug.innerText = debug.innerText.replace(new RegExp('(\\d+) songs loaded(\.*)', 'gm'), `${PLAYLIST_SONGS.length} songs loaded $2`); }
-					}
+	var CUSTOM_PLAYLISTS_TO_LOAD = [
+			{mixcloud_search_key:"rons%20podcast%20%23", mixcloud_match_regex:/RONS.*?Podcast.*?\d{3,4}/i, name_to_replace:/RONS:? Podcast #?(\w+)/gmi, name_replace_with:`RONS: Podcast #$1`},
+			{mixcloud_search_key:"Liquid%20DnB%20Mix%20-%20Vol", mixcloud_match_regex:/Liquid DnB Mix - Vol 6[12469]/i, name_to_replace:" - ", name_replace_with:": "},
+			{mixcloud_search_key:"Lys_InTheMix", mixcloud_match_regex:/^lys_$/gmi, name_to_replace:/lys[_-]{1,2}/gmi, name_replace_with:"Lys: "}
+		]
+	/**
+	 * @params - You can give it a list of strings that include the 
+	 * - "name" of the song.
+	 * - "key" of the song -> the `/artist/song/` part of the mixcloud.com/artist/song/ url.
+	 * - "src" of the song. -> the full url of the audio to be used as the source when loaded.
+	 * OR you can give it a dict with "name", "key", and/or "src" key value pairs.
+	 * valid usage:
+	 * add_song_record_to_playlist("RONS: Podcast #420", "/therealrons/rons-podcast-420/")
+	 * add_song_record_to_playlist("RONS: Podcast #420", "/therealrons/rons-podcast-420/", "https://stream5.mixcloud.com/secure/c/m4a/64/2/7/3/3/c31f-6b26-42c6-814d-2051f42337fc.m4a?sig=woS4_8jGlXDNMX-TmIuEnQ")
+	 * add_song_record_to_playlist({name:"RONS: Podcast #420", key:"/therealrons/rons-podcast-420/", src:"https://stream5.mixcloud.com/secure/c/m4a/64/2/7/3/3/c31f-6b26-42c6-814d-2051f42337fc.m4a?sig=woS4_8jGlXDNMX-TmIuEnQ"})
+	 * add_song_record_to_playlist({name:"RONS: Podcast #420", key:"/therealrons/rons-podcast-420/"})
+	 */
+	function add_song_record_to_playlist() {
+		function validate_song_record() {
+			var temp = {};
+			for (var x of arguments) {
+				if (typeof(x) == 'object' && (x.src || (x.name && x.key))) {
+					return is_valid_song_record(x.name, x.key, x.src);
+				}
+				if (x.toString().match(/^\/.*?\/.*?\/$/gmi)) {
+					// then its a key
+					temp['key'] = x;
+				} else if (x.toString().match(/https?:\/\/.*\..*/gmi)){
+					temp['src'] = x;
+				} else {
+					temp['name'] = x;
 				}
 			}
-			if ('paging' in search_results) {
-				if ('next' in search_results['paging']) {
-					search_queue.push(search_results['paging']['next'])
-				}
-			}
+			return (((temp['src'] || (temp['key'] && temp['name'])) || false) && true ? temp : null);
 		}
-	}
-	async function load_lys_songs(debug=null) {
-		var search_queue = ["https://api.mixcloud.com/search/?limit=100&type=cloudcast&q=Lys_InTheMix"];
-		if (debug) { debug.innerText = `${PLAYLIST_SONGS.length} songs loaded`;}
-		while (search_queue.length > 0) {
-			if (debug) { debug.innerText = debug.innerText.replace(new RegExp('(\\d+) songs loaded(\.*)', 'gm'), `${PLAYLIST_SONGS.length} songs loaded $2.`); }
-			var search_url = search_queue.pop();
-			var search_results = await get_JSON(search_url);
-			if ('data' in search_results) {
-				for (var i in search_results['data']) {
-					if (search_results['data'][i]['user']['username'].toLowerCase() == "lys_") {
-						if (search_results['data'][i]['key'].toLowerCase().includes("augustsummermix2019")) {
-							search_results['data'][i]['name'] = "Lys: August Summer 2019";
-						} else if (search_results['data'][i]['key'].toLowerCase().includes("bienvenue-%c3%a0-mon-mix-dhiver-2019")) {
-							search_results['data'][i]['name'] = "Lys: Winter mix 2019"
-						}
-						PLAYLIST_SONGS.push({
-							name:search_results['data'][i]['name'].replace(/lys[_-]{1,2}/gmi, "Lys: "),
-							key:search_results['data'][i]['key']
-							});
-							if (debug) { debug.innerText = debug.innerText.replace(new RegExp('(\\d+) songs loaded(\.*)', 'gm'), `${PLAYLIST_SONGS.length} songs loaded $2`); }
-					}
-				}
+		function does_song_record_already_exist(record) {
+			for (var row of PLAYLIST_SONGS) {
+				if ((record.key && row.key && record.key == row.key) || (record.src && row.src && record.src == row.src)) 
+					return true
 			}
-			if ('paging' in search_results) {
-				if ('next' in search_results['paging']) {
-					search_queue.push(search_results['paging']['next'])
-				}
-			}
+			return false;
 		}
-	}
-
-	async function load_djmighty_songs(debug=null) {
-		const djmightyreg = /Liquid DnB Mix - Vol 6[12469]/i;
-		var search_queue = ["https://api.mixcloud.com/search/?limit=100&type=cloudcast&q=Liquid%20DnB%20Mix%20-%20Vol"];
-		if (debug) { debug.innerText = `${PLAYLIST_SONGS.length} songs loaded`;}
-		while (search_queue.length > 0) {
-			if (debug) { debug.innerText = debug.innerText.replace(new RegExp('(\\d+) songs loaded(\.*)', 'gm'), `${PLAYLIST_SONGS.length} songs loaded $2.`); }
-			var search_url = search_queue.pop();
-			var search_results = await get_JSON(search_url);
-			if ('data' in search_results) {
-				for (var i in search_results['data']) {
-					let m;
-					if ((m = djmightyreg.exec(search_results['data'][i]['name'])) !== null) {
-						PLAYLIST_SONGS.push({
-							name:search_results['data'][i]['name'].replace(" - ", ": "),
-							key:search_results['data'][i]['key']
-							});
-							if (debug) { debug.innerText = debug.innerText.replace(new RegExp('(\\d+) songs loaded(\.*)', 'gm'), `${PLAYLIST_SONGS.length} songs loaded $2`); }
-					}
-				}
-			}
-			if ('paging' in search_results) {
-				if ('next' in search_results['paging']) {
-					search_queue.push(search_results['paging']['next'])
-				}
-			}
-		}
-	}
-	async function update_playlist_songs() {
-		// custom func for filling PLAYLIST_SONGS with whatever you want
-		var prog = document.querySelector("#songlist_selector").querySelector("option");
-		prog.innerText = "0 songs loaded";
-		var toLoad = {"LYS_": load_lys_songs, "DJ Mighty": load_djmighty_songs, "RONS": load_rons_songs};
+		var song = validate_song_record(...arguments)
 		
-		for ([key, func] of Object.entries(toLoad)){
-			document.title = `Loading: ${key}`;
-			prog.innerText = `${PLAYLIST_SONGS.length} songs loaded...`;
-			await func(debug=prog);
+		if (song && song != {} && !does_song_record_already_exist(song)) {
+			PLAYLIST_SONGS.push(song);
 		}
-
+	}
+	
+	/**
+	 * Loads custom list of songs from mixcloud into the global {@linkcode PLAYLIST_SONGS} variable.
+	 * This function is also responsible for formatting the new records for {@linkcode PLAYLIST_SONGS} name of the song.
+	 * @param {HTMLElement=} debug - If given, it may use this HTMLElement (or subclass of HTMLElement) as a debugging print line.
+	 */
+	async function load_custom_songs(debug=null, mixcloud_search_query, mixcloud_match_regex, name_to_replace, name_replace_with) {
+		if (typeof(mixcloud_match_regex) == "string") {
+			mixcloud_match_regex = new RegExp(mixcloud_match_regex, "gmi")
+		}
+		var search_queue = [`https://api.mixcloud.com/search/?limit=100&q=${mixcloud_search_query}&type=cloudcast`];
+		if (debug) { debug.innerText = `${PLAYLIST_SONGS.length} songs loaded`;}
+		while (search_queue.length > 0) {
+			if (debug) { debug.innerText = debug.innerText.replace(new RegExp('(\\d+) songs loaded(\.*)', 'gm'), `${PLAYLIST_SONGS.length} songs loaded $2.`); }
+			var search_url = search_queue.pop();
+			var search_results = await get_JSON(search_url);
+			if ('data' in search_results) {
+				for (var i in search_results['data']) {
+					if (mixcloud_match_regex.exec(search_results['data'][i]['name']) !== null || mixcloud_match_regex.exec(search_results['data'][i]['user']['username']) !== null) {
+						add_song_record_to_playlist(name=search_results['data'][i]['name'].replace(name_to_replace, name_replace_with), key=search_results['data'][i]['key'])
+						if (debug) { debug.innerText = debug.innerText.replace(new RegExp('(\\d+) songs loaded(\.*)', 'gm'), `${PLAYLIST_SONGS.length} songs loaded $2`); }
+						document.title = `${PLAYLIST_SONGS.length} songs loaded...`;
+					}
+				}
+			}
+			if ('paging' in search_results) {
+				if ('next' in search_results['paging']) {
+					search_queue.push(search_results['paging']['next'])
+				}
+			}
+		}
+	}
+	
+	/** 
+	 * README | EDIT HERE | NOTE | README | EDIT HERE | NOTE | README | EDIT HERE | NOTE | README | EDIT HERE | NOTE
+	 * Custom func for filling PLAYLIST_SONGS with whatever you want
+	 * See load_custom_songs for an example for how to load songs from mixcloud searches.
+	 * See add_song_record_to_playlist for how to add songs to the master playlist.
+	 * README | EDIT HERE | NOTE | README | EDIT HERE | NOTE | README | EDIT HERE | NOTE | README | EDIT HERE | NOTE
+	*/
+	async function update_playlist_songs() {
+		var prog = document.querySelector("#songlist_selector").querySelector("option");
+		prog.innerText = `${PLAYLIST_SONGS.length} songs loaded`;
+		for (var opt of CUSTOM_PLAYLISTS_TO_LOAD) {
+			await load_custom_songs(debug=prog, mixcloud_search_key=opt.mixcloud_search_key, mixcloud_match_regex=opt.mixcloud_match_regex, name_to_replace=opt.name_to_replace, name_replace_with=opt.name_replace_with);
+		}
 		document.title = "Cleaning songs...";
 		prog.innerText = `Cleaning ${PLAYLIST_SONGS.length} songs...`;
-
 		// REMOVE BAD SONGS
 		var BAD_SONGS = ['/therealrons/rons-podcast-665/',]; 	// EXAMPLE VALUES, EDIT THIS AS WE SEE FIT
-			
 		var i = PLAYLIST_SONGS.length - 1;
 		while (i >= 0) {
 			if (PLAYLIST_SONGS[i].name in BAD_SONGS || PLAYLIST_SONGS[i].key in BAD_SONGS) {
@@ -128,20 +126,68 @@
 		console.log('done updating my song playlist');
 		return true;
 	}
-	async function get_JSON(url) { write2log(`get_JSON(${url})`); let response = await fetch(url); let data = await response.json(); write2log(null); return data; }
+
+	/**
+	 * Fetches the response from the URL. If offline, it will attempt to wait for up to `max_attempts=10` tries, 1 minutes each, for the connection to go back online.
+	 * @param url <String> the url to get.
+	 * @throws Exceptions that are raised while fetching the url (not including NetworkErrors), or an offline timeout error.
+	 */
+	async function get_successful_fetch(url) {
+		function delay_until_connection(timeout_sec) {
+			// Sleep until onLine or timeout.
+			let end_at = Date.now() + (timeout_sec * 1000);
+			while (!window.navigator.onLine) {
+				if (Date.now() >= end_at) {
+					throw("Timeout exception, offline for too long!")
+				}
+			}
+		}
+		var max_attempts = 10;
+		var attempt = 0;
+		let result = null;
+		while (result == null && attempt++ < max_attempts) {
+			try {
+				return await fetch(url);
+			} catch (err) {
+				if (! err.message.startswith("NetworkError")) {
+					throw err;
+				}
+				// else it is a network error, so keep waiting until we timeout in 60 seconds
+				write2log(`get_successful_fetch(${url}); //Offline... waiting to reconnect...`)
+				await delay_until_connection(60);
+			}
+		}
+		throw(`Timed out trying to get ${url}`)
+	}
+	
+	/**
+	 * @param url <String> The url to extract JSON from.
+	 * @returns result of JSON.parse.
+	*/
+	async function get_JSON(url) { write2log(`get_JSON(${url})`); let response = await get_successful_fetch(url); let data = await response.json(); write2log(null); return data; }
+	
+	/**
+	 * @param key <String> the mixcloud key/url endpoint of the song to be retrieved.
+	 * @returns <String> the url for the audio source of the given mixcloud key.
+	 */
 	async function retreive_audio_src(key) { 
 		write2log(`retreive_audio_src(${key})`);
-   // Attempts to get the url for the src of the given mixcloud key
+		// Attempts to get the url for the src of the given mixcloud key
 		var url = `https://justcors.com/l_n1ehx3zipc/https://www.dlmixcloud.com/ajax.php/?url=https://www.mixcloud.com${key}`;
-		var response = await fetch(url)
+		var response = await get_successful_fetch(url)
 		var result_text = await response.text()
 		var resulting_json = JSON.parse(result_text)
 		var value = resulting_json['url'];
 		write2log(null);
 		return value;
 	}
+	
+	/**
+	 * Loads a random song index from the playlist queue, tries to not replay the last DONT_REPLAY_FROM_THE_LAST_X_SONGS songs.
+	 * @CONFIG DONT_REPLAY_FROM_THE_LAST_X_SONGS - the number of songs from the history to not be repeated.
+	 * @returns <int> An integer index for PLAYLIST_SONGS where the index is a randomly selcted song that hasnt been recently played.
+	 */
 	function get_random_song_idx(){
-		// Loads a random song index from the playlist queue, tries to not replay the last DONT_REPLAY_FROM_THE_LAST_X_SONGS songs.
 		const DONT_REPLAY_FROM_THE_LAST_X_SONGS = 5;
 		var r = Math.floor(Math.random() * PLAYLIST_SONGS.length);
 		if (PLAYER_HISTORY_STACK.length < DONT_REPLAY_FROM_THE_LAST_X_SONGS) {
@@ -153,16 +199,25 @@
 		}
 		return r;
 	}
+	
+	/**
+	 * Loads up the next song from the playlist queue in a sequential order.
+	 * @return <int> the integer index for PLAYLIST_SONGS of the next song to be played.
+	 */
 	function get_next_song_idx(){
-		// Loads up the next song from the playlist queue in a sequential order.
+		// 
 		if (PLAYER_HISTORY_STACK.length == 0) {
 			// no option to play a diff song.
 			return 0;
 		}
 		return (PLAYER_HISTORY_STACK[0] + 1) % PLAYLIST_SONGS.length;
 	}
+	
+	/**
+	 * Stores timestamps of specific songs so that we can keep track of favorite songs etc.
+	 * Will update the #timestamps_list element.
+	 */
 	function mark_favorited_timestamp(){
-		// adds a way to mark down timestamps of specific songs so that we can keep track of favorite songs etc.
 		var audio = document.querySelector('audio');
 		var curr_timestamp = audio.currentTime;
 		if (PLAYER_HISTORY_STACK.length == 0) {
@@ -174,9 +229,19 @@
 		li.innerText = `${curr_song.name} @ ${sec_to_human_readable_timestamp(curr_timestamp)}`;
 		timestamp_list.appendChild(li);
 	}
+	
+	/**
+	 * @param sec <number> seconds.
+	 * @returns <String> simplified timestamp.
+	 */
 	function sec_to_human_readable_timestamp(sec) {
 		return `${String(parseInt(sec/3600)).padStart(2, '0')}:${String(parseInt((sec % 3600)/60)).padStart(2, '0')}:${parseInt(sec) % 60}`;
 	}
+	
+	/**
+	 * Event fired by selecting a song from the playlist dropdown.
+	 * Loads the song from the index that matches the selected value (a key).
+	 */
 	function load_selected_song(){
 		var selected_val = document.querySelector('select').value;
 		var i = 0;
@@ -188,9 +253,10 @@
 			++i;
 		}
 	}
+	
 	/**
 	 * PREREQ: update_playlist_songs has been run
-	 * If not given explicitly, gets the proper playlist index number, attempts to play that song, and updates the UI. 
+	 * If not given explicitly, gets the proper playlist index number, attempts to play that song, and updates the UI.
 	 * @param next_song, <int> the index from the PLAYLIST_SONGS to use, <null>=0, <str> the song key from the PLAYLIST_SONGS to use.
 	 */
 	async function load_song_from_index(next_song=null){
@@ -231,8 +297,6 @@
 		// now we have the src for this song... its ready to be loaded
 		await update_player_src(PLAYLIST_SONGS[next_song].src);
 		
-		
-		// TODO: UPDATE UI
 		// set currently playing in player history
 		PLAYER_HISTORY_STACK.splice(0, 0, next_song);
 		var dropdown_selections = document.getElementById('songlist_selector');
@@ -244,6 +308,10 @@
 		// update title of webpage
 		document.title = PLAYLIST_SONGS[next_song].name;
 	}
+
+	/**
+	 * Updates the played history tab UI with the current song info.
+	 */
 	function update_played_history_ui() {
 		var history_list = document.querySelector('#played_history_list');
 		var ul = document.createElement("ul");
@@ -255,8 +323,11 @@
 		});
 		history_list.innerHTML = ul.innerHTML;
 	}
+	
 	/**
-	 * @param src: <str> the audio source string to be played
+	 * Updates the audio element with the given src url.
+	 * If successfully played, will update the persistent LAST_SONG_SRC value so that you can quick start playing next time the musicplayer is open.
+	 * @param src <str> the audio source string (url) to be played
 	 */
 	async function update_player_src(src) {
 		if (src == null) {return;}
@@ -266,12 +337,15 @@
 		try{
 			audio.load();
 			try{audio.play();audio.muted = false;}catch(err){}
-			update_persistant('LAST_SONG_SRC', src, 0);	// save the src for the quickstart
+			update_persistent('LAST_SONG_SRC', src, 0);	// save the src for the quickstart
 		}catch(err){}
 	}
-	function handle_audio_load_error(err) {
-		
-	}
+
+	/**
+	 * Updates the dropdown UI to display all of the available songs in PLAYLIST_SONGS. 
+	 * Will sort the PLAYLIST_SONGS.
+	 * NOTE: This should be run after `update_playlist_songs`
+	 */
 	function update_dropdown_with_current_songs(){
 		document.querySelector("#songlist_selector").querySelector("option").innerText = "Updating song selections...";
 		var i = 0;
@@ -288,13 +362,25 @@
 		
 	}
 
+	/** 
+	 * Attempts to load a src value from the localStorage so that we can get music instantly instead of having to wait for the full dynamic load of the song list 
+	 */
+	function start_quick_start_song(){
+		try {
+			var src = load_persistent('LAST_SONG_SRC');
+			if (src) {update_player_src(src);}
+		} catch (err) {
+			console.log("Unable to load the last song src, will have to wait for full song list to load.");
+		}
+	}
 
 	/**
+	 * Updates the given data as stringified JSON for the given key in the `localStorage`.
 	 * @param key <str> the localStorage key to update
 	 * @param data <?> the data.
 	 * @param mode <int>, -1=delete, 0=overwrite, 1=append (if [existing type is array, and mode == 1])
 	 */
-	function update_persistant(key, data=null, mode=0) {
+	function update_persistent(key, data=null, mode=0) {
 		if (mode in [-1, 0]) {
 			localStorage.removeItem(key);
 		}
@@ -308,29 +394,43 @@
 			localStorage.setItem(key, JSON.stringify(temp));
 		}
 	}
-	function load_persistant(key){
+	
+	/**
+	 * @returns JSON.parse of the value stored at the `localStorage.key`.
+	 * null if it does not exist.
+	 */
+	function load_persistent(key){
 		return JSON.parse(localStorage.getItem(key));
 	}
 	
-	/* Attempts to load a src value from the localStorage so that we can get music instantly instead of having to wait for the full dynamic load of the song list */
-	function start_quick_start_song(){
-		try {
-			var src = load_persistant('LAST_SONG_SRC');
-			if (src) {update_player_src(src);}
-		} catch (err) {
-			console.log("Unable to load the last song src, will have to wait for full song list to load.");
+	/**
+	 * load_ functions get the persistent data and updates their respective live values.
+	 * save_ functions stores their respective live values to localStorage to be persistent.
+	 */
+	function load_playlist_data() {
+		let enabled = (load_persistent('ALLOW_PERSISTENT_PLAYLIST') == null? false : load_persistent('ALLOW_PERSISTENT_PLAYLIST'));
+		if (enabled) {
+			document.getElementById("allow_persistent_playlist").checked = true;
+			let plylst = load_persistent('PERSISTENT_PLAYLIST');
+			plylst.forEach(e=>{if(e.src) { add_song_record_to_playlist(e)}})
 		}
 	}
-
-	/*If using a browser with persistant data, this will allow for us to keep the persistant values*/
+	function save_playlist() {
+		if (document.getElementById("allow_persistent_playlist").checked) {
+			update_persistent('PERSISTENT_PLAYLIST',PLAYLIST_SONGS.filter(e=>e.src), 0);
+		} else {
+			// delete this data as its potential to be large* data footprint
+			localStorage.update_persistent('PERSISTENT_PLAYLIST',mode=-1);
+		}
+	}
 	function load_volume() {
-		document.getElementById("player").volume = (load_persistant('VOLUME') == null? 1 : load_persistant('VOLUME')); 
+		document.getElementById("player").volume = (load_persistent('VOLUME') == null? 1 : load_persistent('VOLUME')); 
 	}
 	function save_volume() {
-		update_persistant('VOLUME',document.getElementById("player").volume, 0);
+		update_persistent('VOLUME',document.getElementById("player").volume, 0);
 	}
 	function load_timestamps() {
-		var timestamps = load_persistant('TIMESTAMPS');
+		var timestamps = load_persistent('TIMESTAMPS');
 		if (timestamps == null) {
 			return;
 		}
@@ -343,8 +443,13 @@
 	}
 	function save_timestamps() {
 		var arr = Array.from(new Set(Array.from(document.getElementById('timestamps_list').childNodes).map(e=>e.innerText)));
-		update_persistant('TIMESTAMPS', arr, arr.length == 0? 0 : 1)
+		update_persistent('TIMESTAMPS', arr, arr.length == 0? 0 : 1)
 	}
+	
+	/**
+	 * Fired by the clear timestamps button 🆑.
+	 * Updates the UI and deletes its respective persistent data.
+	 */
 	function clear_timestamps() {
 		var timestamps = document.getElementById('timestamps_list').childNodes;
 		if (timestamps.length == 0) {return;}
@@ -353,7 +458,7 @@
 			while (timestamps.length) {
 				timestamps[0].remove();
 			}
-			update_persistant('TIMESTAMPS', null, -1);
+			update_persistent('TIMESTAMPS', null, -1);
 			//localStorage.removeItem('TIMESTAMPS');
 			console.log(removed);
 			navigator.clipboard.writeText(removed);
@@ -361,8 +466,16 @@
 		}
 	}
 	
+	/**
+	 * onload event:
+	 * 1. Loads any persistent data.
+	 * 2. Adds events to UI objects when they should become available.
+	 * 3. Retreives the playlists.
+	 * 4. Starts playing music.
+	 */
 	window.onload = async function() {
 		load_volume();
+		load_playlist_data();
 		document.querySelector('#shuffle_button').addEventListener('click', function(){document.querySelector('#shuffle_button').innerText = document.querySelector('#shuffle_button').innerText == "🔀" ? "🔃" : "🔀"}, false);
 		document.querySelector('#player_source').addEventListener('error', function(err){ console.log(`Failed to load source value of ${this.src}`); }, false);	
 		start_quick_start_song();
@@ -376,7 +489,12 @@
 		document.querySelector('#mark_timestamp').addEventListener('click', mark_favorited_timestamp, false);
 		document.querySelector('#clear_timestamps').addEventListener('click', clear_timestamps, false);
 		document.querySelector('#player_source').addEventListener('error', function(err){ if (! document.querySelector('audio').seeking) load_song_from_index()}, false);
+
 	}
+	
+	/**
+	 * Debug function for visuals of logging.
+	 */
 	function write2log(val){
 		var l = document.querySelector("#log");
 		l.hidden = val == null;
@@ -385,29 +503,42 @@
 			//console.log(l.innerText);
 		}
 	}
+	
+	/**
+	 * @returns true if on mobile device, false otherwise.
+	 */
 	function mobileCheck() {
 		return (/(android|bb\d+|meego).+mobile|avantgo|bada\/|blackberry|blazer|compal|elaine|fennec|hiptop|iemobile|ip(hone|od)|iris|kindle|lge |maemo|midp|mmp|mobile.+firefox|netfront|opera m(ob|in)i|palm( os)?|phone|p(ixi|re)\/|plucker|pocket|psp|series(4|6)0|symbian|treo|up\.(browser|link)|vodafone|wap|windows ce|xda|xiino/i.test(navigator.userAgent||navigator.vendor||window.opera)||/1207|6310|6590|3gso|4thp|50[1-6]i|770s|802s|a wa|abac|ac(er|oo|s\-)|ai(ko|rn)|al(av|ca|co)|amoi|an(ex|ny|yw)|aptu|ar(ch|go)|as(te|us)|attw|au(di|\-m|r |s )|avan|be(ck|ll|nq)|bi(lb|rd)|bl(ac|az)|br(e|v)w|bumb|bw\-(n|u)|c55\/|capi|ccwa|cdm\-|cell|chtm|cldc|cmd\-|co(mp|nd)|craw|da(it|ll|ng)|dbte|dc\-s|devi|dica|dmob|do(c|p)o|ds(12|\-d)|el(49|ai)|em(l2|ul)|er(ic|k0)|esl8|ez([4-7]0|os|wa|ze)|fetc|fly(\-|_)|g1 u|g560|gene|gf\-5|g\-mo|go(\.w|od)|gr(ad|un)|haie|hcit|hd\-(m|p|t)|hei\-|hi(pt|ta)|hp( i|ip)|hs\-c|ht(c(\-| |_|a|g|p|s|t)|tp)|hu(aw|tc)|i\-(20|go|ma)|i230|iac( |\-|\/)|ibro|idea|ig01|ikom|im1k|inno|ipaq|iris|ja(t|v)a|jbro|jemu|jigs|kddi|keji|kgt( |\/)|klon|kpt |kwc\-|kyo(c|k)|le(no|xi)|lg( g|\/(k|l|u)|50|54|\-[a-w])|libw|lynx|m1\-w|m3ga|m50\/|ma(te|ui|xo)|mc(01|21|ca)|m\-cr|me(rc|ri)|mi(o8|oa|ts)|mmef|mo(01|02|bi|de|do|t(\-| |o|v)|zz)|mt(50|p1|v )|mwbp|mywa|n10[0-2]|n20[2-3]|n30(0|2)|n50(0|2|5)|n7(0(0|1)|10)|ne((c|m)\-|on|tf|wf|wg|wt)|nok(6|i)|nzph|o2im|op(ti|wv)|oran|owg1|p800|pan(a|d|t)|pdxg|pg(13|\-([1-8]|c))|phil|pire|pl(ay|uc)|pn\-2|po(ck|rt|se)|prox|psio|pt\-g|qa\-a|qc(07|12|21|32|60|\-[2-7]|i\-)|qtek|r380|r600|raks|rim9|ro(ve|zo)|s55\/|sa(ge|ma|mm|ms|ny|va)|sc(01|h\-|oo|p\-)|sdk\/|se(c(\-|0|1)|47|mc|nd|ri)|sgh\-|shar|sie(\-|m)|sk\-0|sl(45|id)|sm(al|ar|b3|it|t5)|so(ft|ny)|sp(01|h\-|v\-|v )|sy(01|mb)|t2(18|50)|t6(00|10|18)|ta(gt|lk)|tcl\-|tdg\-|tel(i|m)|tim\-|t\-mo|to(pl|sh)|ts(70|m\-|m3|m5)|tx\-9|up(\.b|g1|si)|utst|v400|v750|veri|vi(rg|te)|vk(40|5[0-3]|\-v)|vm40|voda|vulc|vx(52|53|60|61|70|80|81|83|85|98)|w3c(\-| )|webc|whit|wi(g |nc|nw)|wmlb|wonu|x700|yas\-|your|zeto|zte\-/i.test((navigator.userAgent||navigator.vendor||window.opera).substr(0,4)));
 	}
+	
+	/**
+	 * onunload: Before closing down, save any persistent data that needs to be saved!
+	 */
 	window.onunload = function() {
 		save_volume();
 		save_timestamps();
+		save_playlist();
 	}
 </script>
 </head>
 <body>
-	<div>
+	<button id="PLAY" onclick="let x=document.querySelector('audio');document.querySelectorAll('[hidden]').forEach(e=>e.hidden=false);x.muted=true;x.muted=false;x.volume=mobileCheck()?1:(x.volume?x.volume : 1);x.play();document.querySelector('#PLAY').remove()">▶️</button>
+	<div hidden>
 		<select id="songlist_selector"><option>Loading...</option></select>
 	</div>
 	<div>
-		<button id="shuffle_button">🔀</button>
-		<button id="skip">⏭</button>
-		<button id="mark_timestamp">⭐</button>
+		<button id="shuffle_button" hidden>🔀</button>
+		<button id="skip" hidden>⏭</button>
+		<button id="mark_timestamp" hidden>⭐</button>
 	</div>
-	<audio controls autoplay id="player"><source src="data:audio/ogg;base64,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GEMppJRSSimllFJKKaWUUkoppZRSSimllFJKKaWUUkgppZRSSimllFJKKaWUUkoppZRSSimllFJKKaWUUkoppZRSSimllFJKKaWUUkqppJRSSimllFJKKaWUUkoppZRSSimllFJKKaWUUkoppZRSSimllFJKKaWUUkoppZRSSimllFJKKaWUUkoppZRSSimllFJKKaWUUkoppZRSSimllFJKKaWUUkoppZRSSimllFJKKaWUUkoppZRSSimllFJKKaWUUkoppZRSSimllFJKKaWUUkoppZRSSimllFJKKaWUUkoppZRSSimllFJKKaWUUkoppZRSSimllFJKKaWUUkoppZRSSimllFJKKaWUUkoppZRSSimllFJKKaWUUkoppZRSSimllFJKKaWUUkoplVJKKaWUUkoppZRSSimllFJKKaWUUkoppZRSSimllFJKKaWUUkoppZRSSimllFJKKaWUUkoppZRSSimllFJKKaWUUkoppZRSSimllFJKKaWUUkoppZRSCgCQinAAkHowoQwUGrISAEgFAACMUUopxpyDEDHmGGPQSSgpYsw5xhyUklLlHIQQUmktt8o5CCGk1FJtmXNSWosx5hgz56SkFFvNOYdSUoux5ppr7qS0VmuuNedaWqs115xzzbm0FmuuOdecc8sx15xzzjnnGHPOOeecc84FAOA0OACAHtiwOsJJ0VhgoSErAYBUAAACGaUYc8456BBSjDnnHIQQIoUYc845CCFUjDnnHHQQQqgYc8w5CCGEkDnnHIQQQgghcw466CCEEEIHHYQQQgihlM5BCCGEEEooIYQQQgghhBA6CCGEEEIIIYQQQgghhFJKCCGEEEIJoZRQAABggQMAQIANqyOcFI0FFhqyEgAAAgCAHJagUs6EQY5Bjw1BylEzDUJMOdGZYk5qMxVTkDkQnXQSGWpB2V4yCwAAgCAAIMAEEBggKPhCCIgxAABBiMwQCYVVsMCgDBoc5gHAA0SERACQmKBIu7iALgNc0MVdB0IIQhCCWBxAAQk4OOGGJ97whBucoFNU6iAAAAAAAAwA4AEA4KAAIiKaq7C4wMjQ2ODo8AgAAAAAABYA+AAAOD6AiIjmKiwuMDI0Njg6PAIAAAAAAAAAAICAgAAAAAAAQAAAAICAT2dnUwAEAAAAAAAAAADwOoUqAgAAAJxxaEsBAQA=" type="audio/mp4" id="player_source"></audio>
-	<h4>Played history:</h4>
-	<ul id="played_history_list"></ul>
-	<p>TIMESTAMPS:&nbsp;<button id="clear_timestamps">🆑</button></p>
-	<ul id="timestamps_list"></ul>
-	<pre id="log" style="font-size:10pt; word-wrap:break-word" width="50%"></pre>
+	<div><audio controls autoplay id="player" hidden><source src="data:audio/ogg;base64,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GEMppJRSSimllFJKKaWUUkoppZRSSimllFJKKaWUUkgppZRSSimllFJKKaWUUkoppZRSSimllFJKKaWUUkoppZRSSimllFJKKaWUUkqppJRSSimllFJKKaWUUkoppZRSSimllFJKKaWUUkoppZRSSimllFJKKaWUUkoppZRSSimllFJKKaWUUkoppZRSSimllFJKKaWUUkoppZRSSimllFJKKaWUUkoppZRSSimllFJKKaWUUkoppZRSSimllFJKKaWUUkoppZRSSimllFJKKaWUUkoppZRSSimllFJKKaWUUkoppZRSSimllFJKKaWUUkoppZRSSimllFJKKaWUUkoppZRSSimllFJKKaWUUkoppZRSSimllFJKKaWUUkoppZRSSimllFJKKaWUUkoplVJKKaWUUkoppZRSSimllFJKKaWUUkoppZRSSimllFJKKaWUUkoppZRSSimllFJKKaWUUkoppZRSSimllFJKKaWUUkoppZRSSimllFJKKaWUUkoppZRSCgCQinAAkHowoQwUGrISAEgFAACMUUopxpyDEDHmGGPQSSgpYsw5xhyUklLlHIQQUmktt8o5CCGk1FJtmXNSWosx5hgz56SkFFvNOYdSUoux5ppr7qS0VmuuNedaWqs115xzzbm0FmuuOdecc8sx15xzzjnnGHPOOeecc84FAOA0OACAHtiwOsJJ0VhgoSErAYBUAAACGaUYc8456BBSjDnnHIQQIoUYc845CCFUjDnnHHQQQqgYc8w5CCGEkDnnHIQQQgghcw466CCEEEIHHYQQQgihlM5BCCGEEEooIYQQQgghhBA6CCGEEEIIIYQQQgghhFJKCCGEEEIJoZRQAABggQMAQIANqyOcFI0FFhqyEgAAAgCAHJagUs6EQY5Bjw1BylEzDUJMOdGZYk5qMxVTkDkQnXQSGWpB2V4yCwAAgCAAIMAEEBggKPhCCIgxAABBiMwQCYVVsMCgDBoc5gHAA0SERACQmKBIu7iALgNc0MVdB0IIQhCCWBxAAQk4OOGGJ97whBucoFNU6iAAAAAAAAwA4AEA4KAAIiKaq7C4wMjQ2ODo8AgAAAAAABYA+AAAOD6AiIjmKiwuMDI0Njg6PAIAAAAAAAAAAICAgAAAAAAAQAAAAICAT2dnUwAEAAAAAAAAAADwOoUqAgAAAJxxaEsBAQA=" type="audio/mp4" id="player_source"></audio></div>
+	<div>
+	<h4 hidden>Played history:</h4>
+	<ul id="played_history_list" hidden></ul>
+	<p hidden>TIMESTAMPS:&nbsp;<button id="clear_timestamps">🆑</button></p>
+	<ul id="timestamps_list" hidden></ul>
+	</div>
+	<pre id="log" width="50%" ></pre>
+	<label hidden><input type="checkbox" id="allow_persistent_playlist" > Enable persistent storage of playlist</label>
 </body>
 </html>

@@ -39,7 +39,7 @@
 			var temp = {};
 			for (var x of arguments) {
 				if (typeof(x) == 'object' && (x.src || (x.name && x.key))) {
-					return is_valid_song_record(x.name, x.key, x.src);
+					return validate_song_record(x?.name, x?.key, x?.src);
 				}
 				if (x.toString().match(/^\/.*?\/.*?\/$/gmi)) {
 					// then its a key
@@ -292,6 +292,8 @@
 					next_song++;
 				}
 			} while (PLAYLIST_SONGS[next_song].src == undefined)
+		} else {
+
 		}
 
 		// now we have the src for this song... its ready to be loaded
@@ -339,6 +341,36 @@
 			try{audio.play();audio.muted = false;}catch(err){}
 			update_persistent('LAST_SONG_SRC', src, 0);	// save the src for the quickstart
 		}catch(err){}
+	}
+
+	/**
+	 * Fired when a src fails to load in the audio player.
+	 * Checks the playlist song records that use that src value and attepts to get the new updated SRC for them. 
+	 * When successful it will update the src of the live PLAYLIST_SONG record.
+	 * This is a background thread!
+	 * @param src <str> the audio source string (url) to be checked for updates.
+	 */
+	function check_for_updated_src(src) {
+		if (!src) {
+			return null;
+		}
+		try {
+			for (let e of PLAYLIST_SONGS) {
+				if (e.src == src) {
+					let ns = retreive_audio_src(e.key)
+					.then(newSrc => {
+						if (newSrc && e.src != newSrc) {
+							e.src = newSrc; 
+							write2log(`Updated ${e.key} src to ${newSrc}!`);
+							write2log(null);
+						}
+					});
+				}
+			}
+		} catch(err) {
+			write2log(`some ${err} error while attempting to get updated src of ${song.key}`);
+		}
+	
 	}
 
 	/**
@@ -466,7 +498,7 @@
 			alert("Console and current clipboard contents should contain JSON of removed data!");
 		}
 	}
-	
+
 	/**
 	 * onload event:
 	 * 1. Loads any persistent data.
@@ -478,7 +510,7 @@
 		load_volume();
 		load_playlist_data();
 		document.querySelector('#shuffle_button').addEventListener('click', function(){document.querySelector('#shuffle_button').innerText = document.querySelector('#shuffle_button').innerText == "🔀" ? "🔃" : "🔀"}, false);
-		document.querySelector('#player_source').addEventListener('error', function(err){ console.log(`Failed to load source value of ${this.src}`); }, false);	
+		document.querySelector('#player_source').addEventListener('error', async function(err){ console.log(`Failed to load source value of ${this.src}`); check_for_updated_src(this.src); }, false);	
 		start_quick_start_song();
 		load_timestamps();
 		await update_playlist_songs();
@@ -490,7 +522,6 @@
 		document.querySelector('#mark_timestamp').addEventListener('click', mark_favorited_timestamp, false);
 		document.querySelector('#clear_timestamps').addEventListener('click', clear_timestamps, false);
 		document.querySelector('#player_source').addEventListener('error', function(err){ if (! document.querySelector('audio').seeking) load_song_from_index()}, false);
-
 	}
 	
 	/**

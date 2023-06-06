@@ -416,6 +416,7 @@
 		}
 	}
 	function save_playlist() {
+		update_persistent('ALLOW_PERSISTENT_PLAYLIST', document.getElementById("allow_persistent_playlist").checked);
 		if (document.getElementById("allow_persistent_playlist").checked) {
 			update_persistent('PERSISTENT_PLAYLIST',PLAYLIST_SONGS.filter(e=>e.src), 0);
 		} else {

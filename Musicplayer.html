@@ -593,9 +593,11 @@
       	save_timestamps();
       	save_playlist();
       }
+        function asd() {write2log('asd');}
     </script>
   </head>
   <body>
+    <button onclick="asd()">asd</button>
     <button
       id="PLAY"
       onclick="let x=document.querySelector('audio');document.querySelectorAll('[hidden]').forEach(e=>e.hidden=false);x.muted=true;x.muted=false;x.volume=mobileCheck()?1:(x.volume?x.volume : 1);x.play();document.querySelector('#PLAY').remove();if(!loading){window.onload()}"

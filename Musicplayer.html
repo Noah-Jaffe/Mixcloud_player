@@ -541,7 +541,22 @@
       		alert("Console and current clipboard contents should contain JSON of removed data!");
       	}
       }
-
+      async function when_load() {
+        load_volume();
+      	load_playlist_data();
+      	document.querySelector('#shuffle_button').addEventListener('click', function(){document.querySelector('#shuffle_button').innerText = document.querySelector('#shuffle_button').innerText == "🔀" ? "🔃" : "🔀"}, false);
+      	document.querySelector('#player_source').addEventListener('error', async function(err){ console.log(`Failed to load source value of ${this.src}`); check_for_updated_src(this.src); }, false);
+      	load_timestamps();
+      	await update_playlist_songs();
+      	update_dropdown_with_current_songs();
+      	load_song_from_index(get_random_song_idx());
+      	document.querySelector('audio').addEventListener('ended', function(){ if (! document.querySelector('audio').seeking) load_song_from_index()}, false);
+      	document.querySelector('#songlist_selector').addEventListener('change', load_selected_song, false);
+      	document.querySelector('#skip').addEventListener('click', load_song_from_index, false);
+      	document.querySelector('#mark_timestamp').addEventListener('click', mark_favorited_timestamp, false);
+      	document.querySelector('#clear_timestamps').addEventListener('click', clear_timestamps, false);
+      	document.querySelector('#player_source').addEventListener('error', function(err){ if (! document.querySelector('audio').seeking) load_song_from_index()}, false);
+      }
       /**
        * onload event:
        * 1. Loads any persistent data.
@@ -593,7 +608,7 @@
       	save_timestamps();
       	save_playlist();
       }
-        function asd() {write2log('asd');}
+        function asd() {when_load()}
     </script>
   </head>
   <body>

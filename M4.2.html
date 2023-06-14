@@ -556,8 +556,8 @@
        */
       window.onload = async function() {
       	load_volume();
-      return;
-        load_playlist_data();
+        return;
+        /*load_playlist_data();
       	document.querySelector('#shuffle_button').addEventListener('click', function(){document.querySelector('#shuffle_button').innerText = document.querySelector('#shuffle_button').innerText == "🔀" ? "🔃" : "🔀"}, false);
       	document.querySelector('#player_source').addEventListener('error', async function(err){ console.log(`Failed to load source value of ${this.src}`); check_for_updated_src(this.src); }, false);
       	load_timestamps();
@@ -570,7 +570,7 @@
       	document.querySelector('#mark_timestamp').addEventListener('click', mark_favorited_timestamp, false);
       	document.querySelector('#clear_timestamps').addEventListener('click', clear_timestamps, false);
       	document.querySelector('#player_source').addEventListener('error', function(err){ if (! document.querySelector('audio').seeking) load_song_from_index()}, false);
-      }
+      */}
 
       /**
        * Debug function for visuals of logging.
@@ -630,7 +630,7 @@
     <div>
       <h4 hidden>Played history:</h4>
       <ul id="played_history_list" hidden></ul>
-      <p hidden>TIMESTAMPS:&nbsp;<button id="clear_timestamps">🆑</button></p>
+      <p hidden>TIMESTAMPS:123&nbsp;<button id="clear_timestamps">🆑</button></p>
       <ul id="timestamps_list" hidden></ul>
     </div>
     <pre id="log" width="50%"></pre>

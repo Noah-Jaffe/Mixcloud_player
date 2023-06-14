@@ -490,14 +490,15 @@
            		if (restore?.currentSrc?.toString()?.startsWith("http") && a.src != restore?.currentSrc) {
            			try {
            				update_player_src(restore?.currentSrc).then(e => {
+                    write2log(`.then(e)`);
            						if (document.getElementById("player")?.duration - (restore?.currentTime || 0) > 3.5 * 60) {
+write2log("in side if stmt");
            							// restore when audio is available
            							document.getElementById("player").addEventListener("canplay",function(e){write2log(`canplay(this=${this}, e=${e})`); var a = document.getElementById("player");
-           							if (a.currentSrc == restore?.currentSrc){ a.currentTime = restore?.currentTime  || 0;} else {write2log(`canplay mismatch srcs, not setting time`);}},{
+           							if (a.currentSrc == restore?.currentSrc){ a.currentTime = restore?.currentTime  || 0; write2log("asdghj");} else {write2log(`canplay mismatch srcs, not setting time`);}},{
         // This will invoke the event once and de-register it afterward
         once: true
 });
-           							document.getElementById("player").currentTime = restore?.currentTime  || 0;
            						}
            					});
            				} catch (err) {}
@@ -630,7 +631,7 @@
     <div>
       <h4 hidden>Played history:</h4>
       <ul id="played_history_list" hidden></ul>
-      <p hidden>TIMESTAMPS:123&nbsp;<button id="clear_timestamps">🆑</button></p>
+      <p hidden>TIMESTAMPS:&nbsp;<button id="clear_timestamps">🆑</button></p>
       <ul id="timestamps_list" hidden></ul>
     </div>
     <pre id="log" width="50%"></pre>

@@ -556,7 +556,8 @@
        */
       window.onload = async function() {
       	load_volume();
-      	load_playlist_data();
+      return;
+        load_playlist_data();
       	document.querySelector('#shuffle_button').addEventListener('click', function(){document.querySelector('#shuffle_button').innerText = document.querySelector('#shuffle_button').innerText == "🔀" ? "🔃" : "🔀"}, false);
       	document.querySelector('#player_source').addEventListener('error', async function(err){ console.log(`Failed to load source value of ${this.src}`); check_for_updated_src(this.src); }, false);
       	load_timestamps();

@@ -490,17 +490,36 @@
               write2log(restore.currentTime);
            		if (restore?.currentSrc?.toString()?.startsWith("http") && a.src != restore?.currentSrc) {
            			try {
+                  document.selectElementById("player").addEventListener(
+                    "durationchange",
+                    function (e){
+                      write2log(`duration changed ${e}`);
+                    },
+                    {once:true}
+                  );
            				update_player_src(restore?.currentSrc).then(e => {
-                    write2log(`.then -> document.getElementById("player")?.duration = ${document.getElementById("player")?.duration} > ${3.5*60} ?`);
-           						if (document.getElementById("player")?.duration - (restore?.currentTime || 0) > 3.5 * 60) {
-write2log("in side if stmt");
+                      var xy=document.geyElementById("player");
+                      write2log(`.then -> document.getElementById("player")?.duration = ${xy.duration} > ${3.5*60} ?`);
+                    /*
+           						if (document.getElementById("player").duration - (restore?.currentTime || 0) > 3.5 * 60) {
+                        write2log("in side if stmt");
            							// restore when audio is available
-           							document.getElementById("player").addEventListener("durationchange",function(e){write2log(`canplay(this=${this}, e=${e})`); var a = document.getElementById("player");
-           							if (a.currentSrc == restore?.currentSrc){ a.currentTime = restore?.currentTime  || 0; write2log("asdghj");} else {write2log(`canplay mismatch srcs, not setting time`);}},{
-        // This will invoke the event once and de-register it afterward
-        once: true
-});
-           						}
+           							document.getElementById("player").addEventListener("durationchange",function(evnt){
+                          write2log(`canplay(this=${this}, e=${evnt})`); 
+                          var a = document.getElementById("player");
+            							if (a.currentSrc == restore?.currentSrc){ 
+                            a.currentTime = restore?.currentTime  || 0;
+                            write2log("asdghj");
+                          } else {
+                            write2log(`canplay mismatch srcs, not setting time`);
+                          }
+                        },{
+                          // This will invoke the event once and de-register it afterward
+                          once: true
+                        });
+           						} else {
+                        write2log(`
+                      }*/
            					});
            				} catch (err) {}
            		} else if (load_persistent("LAST_SONG_SRC")) {

@@ -487,10 +487,11 @@
            	if (restore) {
            		a.volume = restore?.volume || 1;
            		a.playbackRate = restore?.playbackRate;
+              write2log(restore.currentTime);
            		if (restore?.currentSrc?.toString()?.startsWith("http") && a.src != restore?.currentSrc) {
            			try {
            				update_player_src(restore?.currentSrc).then(e => {
-                    write2log(`.then(e)`);
+                    write2log(`.then -> document.getElementById("player")?.duration = ${document.getElementById("player")?.duration} > ${3.5*60} ?`);
            						if (document.getElementById("player")?.duration - (restore?.currentTime || 0) > 3.5 * 60) {
 write2log("in side if stmt");
            							// restore when audio is available

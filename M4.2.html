@@ -485,21 +485,18 @@
            	var a = document.getElementById("player");
            	var restore = load_persistent('PLAYER_SNAPSHOT');
            	if (restore) {
+           		write2log("doing restore");
            		a.volume = restore?.volume || 1;
            		a.playbackRate = restore?.playbackRate;
-              write2log(restore.currentTime);
-           		if (restore?.currentSrc?.toString()?.startsWith("http") && a.src != restore?.currentSrc) {
+           		document.getElementById("player").addEventListener("durationchange", function() {
+    write2log("Duration changed!");
+}, {once: true});
+           		/*if (restore?.currentSrc?.toString()?.startsWith("http") && a.src != restore?.currentSrc) {
            			try {
-                  document.selectElementById("player").addEventListener(
-                    "durationchange",
-                    function (e){
-                      write2log(`duration changed ${e}`);
-                    },
-                    {once:true}
-                  );
+                  
            				update_player_src(restore?.currentSrc).then(e => {
                       var xy=document.geyElementById("player");
-                      write2log(`.then -> document.getElementById("player")?.duration = ${xy.duration} > ${3.5*60} ?`);
+                      write2log(`.then -> document.getElementById("player")?.duration = ${xy.duration} > ${3.5*60} ?`);*/
                     /*
            						if (document.getElementById("player").duration - (restore?.currentTime || 0) > 3.5 * 60) {
                         write2log("in side if stmt");
@@ -519,12 +516,13 @@
                         });
            						} else {
                         write2log(`
-                      }*/
+                      }*/ /*
            					});
            				} catch (err) {}
            		} else if (load_persistent("LAST_SONG_SRC")) {
            			update_player_src(load_persistent("LAST_SONG_SRC"))
            		}
+           		*/
            	}
            }
            function save_volume() {

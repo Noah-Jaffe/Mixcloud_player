@@ -1,4 +1,3 @@
-<!DOCTYPE HTML>
 <html>
 <head>
 <meta charset="UTF-8">
@@ -337,14 +336,14 @@
 		const default_skip_time = 60; /* Time to skip in seconds by default */
 
 		const action_handlers = [
-			['play',	async	() => { await audio_element.play(); write2log(`mediaSession.play`);}],
-			['pause',	async	() => { await audio_element.pause();write2log(`mediaSession.pause`); }],
-			['previoustrack',	() => { audio_element.currentTime = 0; write2log(`mediaSession.previoustrack`);}],
-			['nexttrack',	async	() => { write2log(`mediaSession.nexttrack`); await load_song_from_index(); }],
-			['stop',	async	() => { await audio_element.pause(); write2log(`mediaSession.stop`);}],
-			['seekbackward',	(details) => { const skip_time = details.seekOffset || default_skip_time; write2log(`mediaSession.seekbackward ${details.seekOffset} ${default_skip_time} ${skip_time} ${audio_element.currentTime} ${Math.max(audio_element.currentTime - skip_time, 0)}`); audio_element.currentTime = Math.max(audio_element.currentTime - skip_time, 0); navigator.mediaSession.setPositionState({duration: audio_element.duration, playbackRate: audio_element.playbackRate, position: audio_element.currentTime}); }],
-			['seekforward',		(details) => { const skip_time = details.seekOffset || default_skip_time; audio_element.currentTime = Math.min(audio_element.currentTime + skip_time, 0); write2log(`mediaSession.seekforward`); navigator.mediaSession.setPositionState({duration: audio_element.duration, playbackRate: audio_element.playbackRate, position: audio_element.currentTime});}],
-			['seekto',		(details) => { if (details.fastSeek && 'fastSeek' in audio_element) { audio_element.fastSeek(details.seekTime); } else { audio_element.currentTime = details.seekTime; } write2log(`mediaSession.seekto`); navigator.mediaSession.setPositionState({duration: audio_element.duration, playbackRate: audio_element.playbackRate, position: audio_element.currentTime});}],
+			['play',			(details) => { audio_element.play(); write2log(`mediaSession.play\n$${this.constructor.name} {json.stringify(details)}`);}],
+			['pause',			(details) => { audio_element.pause();write2log(`mediaSession.pause\n${this.constructor.name} ${json.stringify(details)}`); }],
+			['previoustrack',	(details) => { audio_element.currentTime = 0; write2log(`mediaSession.previoustrack\n${this.constructor.name} ${json.stringify(details)}`);}],
+			['nexttrack',		(details) => { write2log(`mediaSession.nexttrack\n${this.constructor.name} ${json.stringify(details)}`); load_song_from_index(); }],
+			['stop',			(details) => { write2log(`mediaSession.stop\n${this.constructor.name} ${json.stringify(details)}`); audio_element.pause(); }],
+			['seekbackward',	(details) => { write2log(`mediaSession.seekbackward\n${this.constructor.name} ${json.stringify(details)}`); const skip_time = details.seekOffset || default_skip_time; write2log(`mediaSession.seekbackward ${details.seekOffset} ${default_skip_time} ${skip_time} ${audio_element.currentTime} ${Math.max(audio_element.currentTime - skip_time, 0)}`); audio_element.currentTime = Math.max(audio_element.currentTime - skip_time, 0); navigator.mediaSession.setPositionState({duration: audio_element.duration, playbackRate: audio_element.playbackRate, position: audio_element.currentTime}); }],
+			['seekforward',		(details) => { write2log(`mediaSession.seekforward\n${this.constructor.name} ${json.stringify(details)}`); const skip_time = details.seekOffset || default_skip_time; audio_element.currentTime = Math.min(audio_element.currentTime + skip_time, 0); write2log(`mediaSession.seekforward`); navigator.mediaSession.setPositionState({duration: audio_element.duration, playbackRate: audio_element.playbackRate, position: audio_element.currentTime});}],
+			['seekto',		(details) => { `seekto\n$${this.constructor.name} {write2log(json.stringify(details))}`); if (details.fastSeek && 'fastSeek' in audio_element) { audio_element.fastSeek(details.seekTime); } else { audio_element.currentTime = details.seekTime; } write2log(`mediaSession.seekto`); navigator.mediaSession.setPositionState({duration: audio_element.duration, playbackRate: audio_element.playbackRate, position: audio_element.currentTime});}],
 
 			// Not implemented: ['togglemicrophone', 'togglecamera', 'hangup', 'previousslide', and 'nextslide'];
 			/* Video conferencing actions */

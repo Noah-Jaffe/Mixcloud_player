@@ -337,11 +337,11 @@
 		const default_skip_time = 60; /* Time to skip in seconds by default */
 
 		const action_handlers = [
-			['play',		() => { await audio_element.play(); }],
-			['pause',		() => { await audio_element.pause(); }],
+			['play',	async	() => { await audio_element.play(); }],
+			['pause',	async	() => { await audio_element.pause(); }],
 			['previoustrack',	() => { audio_element.currentTime = 0 }],
 			['nexttrack',		() => { load_song_from_index(); }],
-			['stop',		() => { await audio_element.pause(); }],
+			['stop',	async	() => { await audio_element.pause(); }],
 			['seekbackward',	(details) => { const skip_time = details.seekOffset || default_skip_time; audio_element.currentTime = Math.max(audio_element.currentTime - skip_time, 0); }],
 			['seekforward',		(details) => { const skip_time = details.seekOffset || default_skip_time; audio_element.currentTime = Math.min(audio_element.currentTime + skip_time, 0); }],
 			['seekto',		(details) => { if (details.fastSeek && 'fastSeek' in audio_element) { audio_element.fastSeek(details.seekTime); } else { audio_element.currentTime = details.seekTime; }],

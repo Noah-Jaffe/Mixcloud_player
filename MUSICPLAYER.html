@@ -318,7 +318,7 @@
 	function update_mediasession_info(song) {
 		if ("mediaSession" in navigator) {
 			try {
-				var [artist, title] = song.name.split(": ",1);
+				var [artist, title] = song.name.split(": ",2);
 				navigator.mediaSession.metadata = new MediaMetadata({
 					title: title,
 					artist: artist,
@@ -329,7 +329,7 @@
 		}
 	}
 
-	function set_media_session_action_handlers() {
+	function setup_media_session_action_handlers() {
 		if (!("mediaSession" in navigator)) {
 			write2log(`No mediaSession in navigator.`);
 		}
@@ -337,14 +337,14 @@
 		const default_skip_time = 60; /* Time to skip in seconds by default */
 
 		const action_handlers = [
-			['play',	async	() => { await audio_element.play(); }],
-			['pause',	async	() => { await audio_element.pause(); }],
-			['previoustrack',	() => { audio_element.currentTime = 0 }],
-			['nexttrack',		() => { load_song_from_index(); }],
-			['stop',	async	() => { await audio_element.pause(); }],
-			['seekbackward',	(details) => { const skip_time = details.seekOffset || default_skip_time; audio_element.currentTime = Math.max(audio_element.currentTime - skip_time, 0); }],
-			['seekforward',		(details) => { const skip_time = details.seekOffset || default_skip_time; audio_element.currentTime = Math.min(audio_element.currentTime + skip_time, 0); }],
-			['seekto',		(details) => { if (details.fastSeek && 'fastSeek' in audio_element) { audio_element.fastSeek(details.seekTime); } else { audio_element.currentTime = details.seekTime; }],
+			['play',	async	() => { await audio_element.play(); write2log(`mediaSession.play`);}],
+			['pause',	async	() => { await audio_element.pause();write2log(`mediaSession.pause`); }],
+			['previoustrack',	() => { audio_element.currentTime = 0; write2log(`mediaSession.previoustrack`);}],
+			['nexttrack',		() => { write2log(`mediaSession.nexttrack`);load_song_from_index(); }],
+			['stop',	async	() => { await audio_element.pause(); write2log(`mediaSession.stop`);}],
+			['seekbackward',	(details) => { const skip_time = details.seekOffset || default_skip_time; audio_element.currentTime = Math.max(audio_element.currentTime - skip_time, 0); write2log(`mediaSession.seekbackward`);}],
+			['seekforward',		(details) => { const skip_time = details.seekOffset || default_skip_time; audio_element.currentTime = Math.min(audio_element.currentTime + skip_time, 0); write2log(`mediaSession.seekforward`);}],
+			['seekto',		(details) => { if (details.fastSeek && 'fastSeek' in audio_element) { audio_element.fastSeek(details.seekTime); } else { audio_element.currentTime = details.seekTime; } write2log(`mediaSession.seekto`); }],
 
 			// Not implemented: ['togglemicrophone', 'togglecamera', 'hangup', 'previousslide', and 'nextslide'];
 			/* Video conferencing actions */
@@ -365,8 +365,9 @@
 		}
 		try {
 			// Set playback event listeners
-			video.addEventListener('play', () => { navigator.mediaSession.playbackState = 'playing'; });
-			video.addEventListener('pause', () => { navigator.mediaSession.playbackState = 'paused'; });
+			audio_element.addEventListener('play', () => { navigator.mediaSession.playbackState = 'playing'; });
+			audio_element.addEventListener('pause', () => { navigator.mediaSession.playbackState = 'paused'; });
+		}
 		catch (err) {
 			write2log(`Failed to set navigator.mediaSession.playbackState play/pause handlers`);
 		}
@@ -584,6 +585,7 @@
 		document.querySelector('#mark_timestamp').addEventListener('click', mark_favorited_timestamp, false);
 		document.querySelector('#clear_timestamps').addEventListener('click', clear_timestamps, false);
 		document.querySelector('#player_source').addEventListener('error', function(err){ if (! document.querySelector('audio').seeking) load_song_from_index()}, false);
+		setup_media_session_action_handlers();
 	}
 	
 	/**

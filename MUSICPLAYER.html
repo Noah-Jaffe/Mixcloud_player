@@ -100,6 +100,9 @@
 		let new_cat = cat;
 		while (true) {
 			new_cat = window.prompt('Enter the mixcloud tag: ', new_cat);
+			if (new_cat == null) {
+				new_cat = "80s";
+			}
 			let valid = await test_valid_cat(new_cat);
 			if (valid) {
 				break;

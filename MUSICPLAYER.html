@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>MUSICPLAYER: 80s MODE</title>
+<title>MUSICPLAYER</title>
 <style>
 	button { font-size: 300%; padding: 2px 2px 2px 2px; background-color: rgba(0,0,0,0); border: none; }
 	button:hover { background-color: gray; }
@@ -78,7 +78,6 @@
 					add_song_record_to_playlist(name=search_results['data'][i]['name'], key=search_results['data'][i]['key'])
 					if (debug) { debug.innerText = debug.innerText.replace(new RegExp('(\\d+) songs loaded(\.*)', 'gm'), `${PLAYLIST_SONGS.length} songs loaded $2`); }
 					document.title = `${PLAYLIST_SONGS.length} songs loaded...`;
-					
 				}
 			}
 			if ('paging' in search_results) {
@@ -88,7 +87,27 @@
 			}
 		}
 	}
-	
+
+	function get_cat_name() {
+		function test_valid_cat(cat){
+			try {
+				var js = get_JSON(`https://api.mixcloud.com/discover/${cat.toString().trim().replace(" ","-")}/popular/?limit=1&metadata=0&offset=0`);
+				return js["data"] !== undefined;
+			} catch {}
+			return false;
+		}
+		let cat = (load_persistent('DISCOVER_CAT') == null? "" : load_persistent('DISCOVER_CAT'));
+		let new_cat = cat;
+		while (true) {
+			new_cat = window.propmpt('Enter the mixcloud tag: ', new_cat);
+			if (test_valid_cat(new_cat)) {
+				break;
+			}
+		} 
+		update_persistent('DISCOVER_CAT',new_cat, 0);
+		return new_cat;
+	} 		
+
 	/** 
 	 * README | EDIT HERE | NOTE | README | EDIT HERE | NOTE | README | EDIT HERE | NOTE | README | EDIT HERE | NOTE
 	 * Custom func for filling PLAYLIST_SONGS with whatever you want
@@ -99,7 +118,8 @@
 	async function update_playlist_songs() {
 		var prog = document.querySelector("#songlist_selector").querySelector("option");
 		prog.innerText = `${PLAYLIST_SONGS.length} songs loaded`;
-		await load_custom_songs(debug=prog, "https://api.mixcloud.com/discover/80s/popular/?limit=100&metadata=1&offset=0");
+		var cat_name = get_custom_cat_name();
+		await load_custom_songs(debug=prog, `https://api.mixcloud.com/discover/${cat_name}/popular/?limit=100&metadata=1&offset=0`);
 		document.title = "Cleaning songs...";
 		prog.innerText = `Cleaning ${PLAYLIST_SONGS.length} songs...`;
 		// REMOVE BAD SONGS
@@ -543,7 +563,7 @@
 </script>
 </head>
 <body>
-	<button id="PLAY" onclick="let x=document.querySelector('audio');document.querySelectorAll('[hidden]').forEach(e=>e.hidden=false);x.muted=true;x.muted=false;x.volume=mobileCheck()?1:(x.volume?x.volume : 1);x.play();document.querySelector('#PLAY').remove()">▶️ 80s</button>
+	<button id="PLAY" onclick="let x=document.querySelector('audio');document.querySelectorAll('[hidden]').forEach(e=>e.hidden=false);x.muted=true;x.muted=false;x.volume=mobileCheck()?1:(x.volume?x.volume : 1);x.play();document.querySelector('#PLAY').remove()">▶️</button>
 	<div hidden>
 		<select id="songlist_selector"><option>Loading...</option></select>
 	</div>

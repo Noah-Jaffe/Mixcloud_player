@@ -75,7 +75,7 @@
 			var search_results = await get_JSON(search_url);
 			if ('data' in search_results) {
 				for (var i in search_results['data']) {
-					add_song_record_to_playlist(name=search_results['data'][i]['name'].replace(name_to_replace, name_replace_with), key=search_results['data'][i]['key'])
+					add_song_record_to_playlist(name=search_results['data'][i]['name'], key=search_results['data'][i]['key'])
 					if (debug) { debug.innerText = debug.innerText.replace(new RegExp('(\\d+) songs loaded(\.*)', 'gm'), `${PLAYLIST_SONGS.length} songs loaded $2`); }
 					document.title = `${PLAYLIST_SONGS.length} songs loaded...`;
 					

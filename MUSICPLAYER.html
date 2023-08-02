@@ -67,9 +67,6 @@
 	 * @param {HTMLElement=} debug - If given, it may use this HTMLElement (or subclass of HTMLElement) as a debugging print line.
 	 */
 	async function load_custom_songs(debug=null, src) {
-		if (typeof(mixcloud_match_regex) == "string") {
-			mixcloud_match_regex = new RegExp(mixcloud_match_regex, "gmi")
-		}
 		var search_queue = [src];
 		if (debug) { debug.innerText = `${PLAYLIST_SONGS.length} songs loaded`;}
 		while (search_queue.length > 0) {
@@ -78,11 +75,10 @@
 			var search_results = await get_JSON(search_url);
 			if ('data' in search_results) {
 				for (var i in search_results['data']) {
-					if (mixcloud_match_regex.exec(search_results['data'][i]['name']) !== null || mixcloud_match_regex.exec(search_results['data'][i]['user']['username']) !== null) {
-						add_song_record_to_playlist(name=search_results['data'][i]['name'].replace(name_to_replace, name_replace_with), key=search_results['data'][i]['key'])
-						if (debug) { debug.innerText = debug.innerText.replace(new RegExp('(\\d+) songs loaded(\.*)', 'gm'), `${PLAYLIST_SONGS.length} songs loaded $2`); }
-						document.title = `${PLAYLIST_SONGS.length} songs loaded...`;
-					}
+					add_song_record_to_playlist(name=search_results['data'][i]['name'].replace(name_to_replace, name_replace_with), key=search_results['data'][i]['key'])
+					if (debug) { debug.innerText = debug.innerText.replace(new RegExp('(\\d+) songs loaded(\.*)', 'gm'), `${PLAYLIST_SONGS.length} songs loaded $2`); }
+					document.title = `${PLAYLIST_SONGS.length} songs loaded...`;
+					
 				}
 			}
 			if ('paging' in search_results) {
@@ -542,7 +538,7 @@
 	window.onunload = function() {
 		save_volume();
 		save_timestamps();
-		save_playlist();
+		//save_playlist();   # dont save playlist for 80s mode
 	}
 </script>
 </head>

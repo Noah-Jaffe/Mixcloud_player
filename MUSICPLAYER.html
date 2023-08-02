@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>MUSICPLAYER</title>
+<title>MUSICPLAYER: 80s MODE</title>
 <style>
 	button { font-size: 300%; padding: 2px 2px 2px 2px; background-color: rgba(0,0,0,0); border: none; }
 	button:hover { background-color: gray; }
@@ -17,9 +17,6 @@
 <script>
 	var PLAYER_HISTORY_STACK = [];
 	var PLAYLIST_SONGS = [];
-	var CUSTOM_PLAYLISTS_TO_LOAD = [
-			{mixcloud_search_key:"dds330%2080s", mixcloud_match_regex:/dds330/i, name_to_replace:/(.*?) - (.*)/gmi, name_replace_with:`$1: $2`},
-		]
 	/**
 	 * @params - You can give it a list of strings that include the 
 	 * - "name" of the song.
@@ -69,11 +66,11 @@
 	 * This function is also responsible for formatting the new records for {@linkcode PLAYLIST_SONGS} name of the song.
 	 * @param {HTMLElement=} debug - If given, it may use this HTMLElement (or subclass of HTMLElement) as a debugging print line.
 	 */
-	async function load_custom_songs(debug=null, mixcloud_search_query, mixcloud_match_regex, name_to_replace, name_replace_with) {
+	async function load_custom_songs(debug=null, src) {
 		if (typeof(mixcloud_match_regex) == "string") {
 			mixcloud_match_regex = new RegExp(mixcloud_match_regex, "gmi")
 		}
-		var search_queue = [`https://api.mixcloud.com/search/?limit=100&q=${mixcloud_search_query}&type=cloudcast`];
+		var search_queue = [src];
 		if (debug) { debug.innerText = `${PLAYLIST_SONGS.length} songs loaded`;}
 		while (search_queue.length > 0) {
 			if (debug) { debug.innerText = debug.innerText.replace(new RegExp('(\\d+) songs loaded(\.*)', 'gm'), `${PLAYLIST_SONGS.length} songs loaded $2.`); }
@@ -106,9 +103,7 @@
 	async function update_playlist_songs() {
 		var prog = document.querySelector("#songlist_selector").querySelector("option");
 		prog.innerText = `${PLAYLIST_SONGS.length} songs loaded`;
-		for (var opt of CUSTOM_PLAYLISTS_TO_LOAD) {
-			await load_custom_songs(debug=prog, mixcloud_search_key=opt.mixcloud_search_key, mixcloud_match_regex=opt.mixcloud_match_regex, name_to_replace=opt.name_to_replace, name_replace_with=opt.name_replace_with);
-		}
+		await load_custom_songs(debug=prog, "https://api.mixcloud.com/discover/80s/popular/?limit=100&metadata=1&offset=0");
 		document.title = "Cleaning songs...";
 		prog.innerText = `Cleaning ${PLAYLIST_SONGS.length} songs...`;
 		// REMOVE BAD SONGS
@@ -552,7 +547,7 @@
 </script>
 </head>
 <body>
-	<button id="PLAY" onclick="let x=document.querySelector('audio');document.querySelectorAll('[hidden]').forEach(e=>e.hidden=false);x.muted=true;x.muted=false;x.volume=mobileCheck()?1:(x.volume?x.volume : 1);x.play();document.querySelector('#PLAY').remove()">▶️</button>
+	<button id="PLAY" onclick="let x=document.querySelector('audio');document.querySelectorAll('[hidden]').forEach(e=>e.hidden=false);x.muted=true;x.muted=false;x.volume=mobileCheck()?1:(x.volume?x.volume : 1);x.play();document.querySelector('#PLAY').remove()">▶️ 80s</button>
 	<div hidden>
 		<select id="songlist_selector"><option>Loading...</option></select>
 	</div>

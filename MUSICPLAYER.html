@@ -91,8 +91,8 @@
 	async function get_custom_cat_name() {
 		async function test_valid_cat(cat){
 			try {
-				var js = get_JSON(`https://api.mixcloud.com/discover/${cat.toString().trim().replace(" ","-")}/popular/?limit=1&metadata=0&offset=0`);
-				return js["data"] !== undefined;
+				var js = await get_JSON(`https://api.mixcloud.com/discover/${cat.toString().trim().replace(" ","-")}`);
+				return js["key"] !== undefined;
 			} catch {}
 			return false;
 		}

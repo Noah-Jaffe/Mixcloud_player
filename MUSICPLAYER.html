@@ -88,7 +88,7 @@
 		}
 	}
 
-	function get_cat_name() {
+	function get_custom_cat_name() {
 		function test_valid_cat(cat){
 			try {
 				var js = get_JSON(`https://api.mixcloud.com/discover/${cat.toString().trim().replace(" ","-")}/popular/?limit=1&metadata=0&offset=0`);

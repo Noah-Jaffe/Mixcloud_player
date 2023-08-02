@@ -99,7 +99,7 @@
 		let cat = (load_persistent('DISCOVER_CAT') == null? "" : load_persistent('DISCOVER_CAT'));
 		let new_cat = cat;
 		while (true) {
-			new_cat = window.propmpt('Enter the mixcloud tag: ', new_cat);
+			new_cat = window.prompt('Enter the mixcloud tag: ', new_cat);
 			if (test_valid_cat(new_cat)) {
 				break;
 			}

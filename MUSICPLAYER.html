@@ -88,7 +88,7 @@
 		}
 	}
 
-	function get_custom_cat_name() {
+	async function get_custom_cat_name() {
 		function test_valid_cat(cat){
 			try {
 				var js = get_JSON(`https://api.mixcloud.com/discover/${cat.toString().trim().replace(" ","-")}/popular/?limit=1&metadata=0&offset=0`);
@@ -100,7 +100,7 @@
 		let new_cat = cat;
 		while (true) {
 			new_cat = window.prompt('Enter the mixcloud tag: ', new_cat);
-			if (test_valid_cat(new_cat)) {
+			if (await test_valid_cat(new_cat)) {
 				break;
 			}
 		} 
@@ -118,7 +118,7 @@
 	async function update_playlist_songs() {
 		var prog = document.querySelector("#songlist_selector").querySelector("option");
 		prog.innerText = `${PLAYLIST_SONGS.length} songs loaded`;
-		var cat_name = get_custom_cat_name();
+		var cat_name = await get_custom_cat_name();
 		await load_custom_songs(debug=prog, `https://api.mixcloud.com/discover/${cat_name}/popular/?limit=100&metadata=1&offset=0`);
 		document.title = "Cleaning songs...";
 		prog.innerText = `Cleaning ${PLAYLIST_SONGS.length} songs...`;

@@ -19,7 +19,7 @@
 	var CUSTOM_PLAYLISTS_TO_LOAD = [
 			{mixcloud_search_key:"rons%20podcast%20%23", mixcloud_match_regex:/RONS.*?Podcast.*?\d{3,4}/i, name_to_replace:/RONS:? Podcast #?(\w+)/gmi, name_replace_with:`RONS: Podcast #$1`},
 			{mixcloud_search_key:"Liquid%20DnB%20Mix%20-%20Vol", mixcloud_match_regex:/Liquid DnB Mix - Vol 6[12469]/i, name_to_replace:" - ", name_replace_with:": "},
-			{mixcloud_search_key:"Lys_InTheMix", mixcloud_match_regex:/^lys_$/gmi, name_to_replace:/lys[_-]{1,2}/gmi, name_replace_with:"Lys: "}
+			{mixcloud_search_key:"Lys_InTheMix", mixcloud_match_regex:/^lys_$/gmi, name_to_replace:/lys[_-]{1,2}|^(?!.*?lys[_-]{1,2})/gmi, name_replace_with:"Lys: "}
 		]
 	/**
 	 * @params - You can give it a list of strings that include the 
@@ -324,6 +324,8 @@
 					//album: "Podcast Name",
 					//artwork: [{ src: "podcast.jpg" }],
 				});
+				var audio_element = document.querySelector("audio");
+				navigator.mediaSession.setPositionState({duration: audio_element.duration, playbackRate: audio_element.playbackRate, position: audio_element.currentTime});
 			} catch (err) {}
 		}
 	}
@@ -346,7 +348,7 @@
 			['play',			() => { write3log(`${new Date().now()}    play`); audio_element.play(); }],
 			//['pause',			() => { write3log(`${new Date().now()}    pause`); audio_element.pause(); }],	// temp solution - when asked to pause just do a skip
 			['previoustrack',	() => { write3log(`${new Date().now()}    previoustrack`); audio_element.currentTime = 0; }],
-			['nexttrack',		() => { write3log(`${new Date().now()}    nexttrack`); load_song_from_index(); audio_element.currentTime = 0;}],
+			['nexttrack',		() => { write3log(`${new Date().now()}    nexttrack`); load_song_from_index(); ],
 			['stop',			() => { write3log(`${new Date().now()}    stop`); audio_element.pause(); }],
 			['seekbackward',	(details) => { write3log(`${new Date().now()}    seekbackward ${json.stringify(details)}`); const skip_time = details.seekOffset || default_skip_time; write3log(`${new Date().now()}    seekbackward ${details.seekOffset} ${default_skip_time} ${skip_time} ${audio_element.currentTime} ${Math.max(audio_element.currentTime - skip_time, 0)}`); audio_element.currentTime = Math.max(audio_element.currentTime - skip_time, 0); navigator.mediaSession.setPositionState({duration: audio_element.duration, playbackRate: audio_element.playbackRate, position: audio_element.currentTime}); }],
 			['seekforward',		(details) => { write3log(`${new Date().now()}    seekforward ${json.stringify(details)}`); const skip_time = details.seekOffset || default_skip_time; audio_element.currentTime = Math.min(audio_element.currentTime + skip_time, 0); write2log(`${new Date().now()}    seekforward`); navigator.mediaSession.setPositionState({duration: audio_element.duration, playbackRate: audio_element.playbackRate, position: audio_element.currentTime});}],

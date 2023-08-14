@@ -380,7 +380,7 @@
 		}
 		// TEMP SOLUTION TO THE MEDIA SESSION ACTIONS NOT BEING PASSED TO CHROME WHEN IN A CAR
 		try {
-			navigator.mediaSession.setActionHandler('pause', ()=>{write3log('pause attempt denied?'); load_song_from_index(); });
+			navigator.mediaSession.setActionHandler('pause', ()=>{ load_song_from_index(); });
 		} catch (error) {
 			write2log(`The media session action is not supported yet.`);
 		}

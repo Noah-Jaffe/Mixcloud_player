@@ -346,7 +346,7 @@
 			['play',			() => { write3log(`${new Date().now()}    play`); audio_element.play(); }],
 			//['pause',			() => { write3log(`${new Date().now()}    pause`); audio_element.pause(); }],	// temp solution - when asked to pause just do a skip
 			['previoustrack',	() => { write3log(`${new Date().now()}    previoustrack`); audio_element.currentTime = 0; }],
-			['nexttrack',		() => { write3log(`${new Date().now()}    nexttrack`); load_song_from_index(); }],
+			['nexttrack',		() => { write3log(`${new Date().now()}    nexttrack`); load_song_from_index(); audio_element.currentTime = 0;}],
 			['stop',			() => { write3log(`${new Date().now()}    stop`); audio_element.pause(); }],
 			['seekbackward',	(details) => { write3log(`${new Date().now()}    seekbackward ${json.stringify(details)}`); const skip_time = details.seekOffset || default_skip_time; write3log(`${new Date().now()}    seekbackward ${details.seekOffset} ${default_skip_time} ${skip_time} ${audio_element.currentTime} ${Math.max(audio_element.currentTime - skip_time, 0)}`); audio_element.currentTime = Math.max(audio_element.currentTime - skip_time, 0); navigator.mediaSession.setPositionState({duration: audio_element.duration, playbackRate: audio_element.playbackRate, position: audio_element.currentTime}); }],
 			['seekforward',		(details) => { write3log(`${new Date().now()}    seekforward ${json.stringify(details)}`); const skip_time = details.seekOffset || default_skip_time; audio_element.currentTime = Math.min(audio_element.currentTime + skip_time, 0); write2log(`${new Date().now()}    seekforward`); navigator.mediaSession.setPositionState({duration: audio_element.duration, playbackRate: audio_element.playbackRate, position: audio_element.currentTime});}],

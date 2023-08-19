@@ -109,6 +109,7 @@
 	async function update_playlist_songs() {
 		var prog = document.querySelector("#songlist_selector").querySelector("option");
 		prog.innerText = `${PLAYLIST_SONGS.length} songs loaded`;
+		
 		for (var opt of CUSTOM_PLAYLISTS_TO_LOAD) {
 			await load_custom_songs(debug=prog, mixcloud_search_key=opt.mixcloud_search_key, mixcloud_match_regex=opt.mixcloud_match_regex, name_to_replace=opt.name_to_replace, name_replace_with=opt.name_replace_with);
 		}
@@ -125,6 +126,7 @@
 			i -= 1;
 		}
 		console.log('done updating my song playlist');
+		update_persistent('PERSISTENT_PLAYLIST_GEN_DATE',new Date().now(), 0);
 		return true;
 	}
 
@@ -445,16 +447,17 @@
 		if (enabled) {
 			document.getElementById("allow_persistent_playlist").checked = true;
 			let plylst = load_persistent('PERSISTENT_PLAYLIST');
-			plylst.forEach(e=>{if(e.src) { add_song_record_to_playlist(e)}})
+			plylst.forEach(e=>{/*if(e.src) {*/ add_song_record_to_playlist(e)}/*}*/)
 		}
 	}
 	function save_playlist() {
 		update_persistent('ALLOW_PERSISTENT_PLAYLIST', document.getElementById("allow_persistent_playlist").checked);
 		if (document.getElementById("allow_persistent_playlist").checked) {
-			update_persistent('PERSISTENT_PLAYLIST',PLAYLIST_SONGS.filter(e=>e.src), 0);
+			update_persistent('PERSISTENT_PLAYLIST',PLAYLIST_SONGS/*.filter(e=>e.src)*/, 0);
 		} else {
 			// delete this data as its potential to be large* data footprint
 			localStorage.update_persistent('PERSISTENT_PLAYLIST',mode=-1);
+			localStorage.update_persistent('PERSISTENT_PLAYLIST_GEN_DATE',mode=-1);
 		}
 	}
 	function load_volume() {
@@ -514,7 +517,9 @@
 		document.querySelector('#player_source').addEventListener('error', async function(err){ console.log(`Failed to load source value of ${this.src}`); check_for_updated_src(this.src); }, false);	
 		start_quick_start_song();
 		load_timestamps();
-		await update_playlist_songs();
+		if (new Date() - new Date(load_persistent('PERSISTENT_PLAYLIST_GEN_DATE')) > 86400000) {
+			await update_playlist_songs();
+		}
 		update_dropdown_with_current_songs();
 		load_song_from_index(get_random_song_idx());
 		document.querySelector('audio').addEventListener('ended', function(){ if (! document.querySelector('audio').seeking) load_song_from_index()}, false);

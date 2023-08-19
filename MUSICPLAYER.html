@@ -39,13 +39,16 @@
 		function validate_song_record() {
 			var temp = {};
 			for (var x of arguments) {
+				if (x == null) {
+					continue;
+				}
 				if (typeof(x) == 'object' && (x.src || (x.name && x.key))) {
 					return validate_song_record(x?.name, x?.key, x?.src);
 				}
-				if (x.toString().match(/^\/.*?\/.*?\/$/gmi)) {
+				if (x?.toString().match(/^\/.*?\/.*?\/$/gmi)) {
 					// then its a key
 					temp['key'] = x;
-				} else if (x.toString().match(/https?:\/\/.*\..*/gmi)){
+				} else if (x?.toString().match(/https?:\/\/.*\..*/gmi)){
 					temp['src'] = x;
 				} else {
 					temp['name'] = x;

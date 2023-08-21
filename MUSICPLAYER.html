@@ -346,7 +346,7 @@
 
 		const action_handlers = [
 			['play',			() => { audio_element.play(); }],
-			//['pause',			() => { write3log(`${new Date().now()}    pause`); audio_element.pause(); }],	// temp solution - when asked to pause just do a skip
+			['pause',			() => { audio_element.pause(); }],
 			['previoustrack',	() => { audio_element.currentTime = 0; }],
 			['nexttrack',		() => { load_song_from_index(); }],
 			['stop',			() => {audio_element.pause(); }],
@@ -377,12 +377,6 @@
 		}
 		catch (err) {
 			write2log(`Failed to set navigator.mediaSession.playbackState play/pause handlers`);
-		}
-		// TEMP SOLUTION TO THE MEDIA SESSION ACTIONS NOT BEING PASSED TO CHROME WHEN IN A CAR
-		try {
-			navigator.mediaSession.setActionHandler('pause', ()=>{ load_song_from_index(); });
-		} catch (error) {
-			write2log(`The media session action is not supported yet.`);
 		}
 	}
 

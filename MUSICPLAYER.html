@@ -1,4 +1,3 @@
-<!DOCTYPE HTML>
 <html>
 <head>
 <meta charset="UTF-8">
@@ -319,8 +318,79 @@
 
 		// update title of webpage
 		document.title = PLAYLIST_SONGS[next_song].name;
+		update_mediasession_info(PLAYLIST_SONGS[next_song]);
 	}
 
+	/**
+ 	 * Updates the navagator.mediaSession object to reflect the given song.
+	 */  
+	function update_mediasession_info(song) {
+		if ("mediaSession" in navigator) {
+			try {
+				var [artist, title] = song.name.split(": ",2);
+				navigator.mediaSession.metadata = new MediaMetadata({
+					title: title,
+					artist: artist,
+					//album: "Podcast Name",
+					//artwork: [{ src: "podcast.jpg" }],
+				});
+				var audio_element = document.querySelector("audio");
+				navigator.mediaSession.setPositionState({duration: audio_element.duration, playbackRate: audio_element.playbackRate, position: audio_element.currentTime});
+			} catch (err) {}
+		}
+	}
+	
+	 function write3log(value) {
+		var timestamp_list = document.querySelector('#timestamps_list');
+		var li = document.createElement("li");
+		li.appendChild(document.createTextNode(`${new Date().now()} > ${arguments.callee?.name} > ${value}`));
+		timestamp_list.appendChild(li);
+		console.log(value);
+	}
+	function setup_media_session_action_handlers() {
+		if (!("mediaSession" in navigator)) {
+			write2log(`No mediaSession in navigator.`);
+		}
+		const audio_element = document.querySelector('audio');
+		const default_skip_time = 60; /* Time to skip in seconds by default */
+
+		const action_handlers = [
+			['play',			() => { audio_element.play(); }],
+			['pause',			() => { audio_element.pause(); }],
+			['previoustrack',	() => { audio_element.currentTime = 0; }],
+			['nexttrack',		() => { load_song_from_index(); }],
+			['stop',			() => {audio_element.pause(); }],
+			['seekbackward',	(details) => {  const skip_time = details.seekOffset || default_skip_time; audio_element.currentTime = Math.max(audio_element.currentTime - skip_time, 0); navigator.mediaSession.setPositionState({duration: audio_element.duration, playbackRate: audio_element.playbackRate, position: audio_element.currentTime});}],
+			['seekforward',		(details) => {  const skip_time = details.seekOffset || default_skip_time; audio_element.currentTime = Math.min(audio_element.currentTime + skip_time, 0); navigator.mediaSession.setPositionState({duration: audio_element.duration, playbackRate: audio_element.playbackRate, position: audio_element.currentTime});}],
+			['seekto',		(details) => {  if (details.fastSeek && 'fastSeek' in audio_element) { audio_element.fastSeek(details.seekTime); } else { audio_element.currentTime = details.seekTime; } navigator.mediaSession.setPositionState({duration: audio_element.duration, playbackRate: audio_element.playbackRate, position: audio_element.currentTime});}],
+
+			// Not implemented: ['togglemicrophone', 'togglecamera', 'hangup', 'previousslide', and 'nextslide'];
+			/* Video conferencing actions */
+			//['togglemicrophone',	() => { await audio_element.pause(); /* On any microphone usage (on or off), just set the audio to pause. */ }],
+			//['togglecamera',	() => { await audio_element.pause(); /* On any camera usage (on or off), just set the audio to pause. */ }],
+			//['hangup',		() => { if (audio_element.currentTime > 0) { await audio_element.play(); } /* On hangup, simplified (not bulletproof) version of unmute if we were playing music before */}],
+			/* Presenting slides actions */ // Not implemented at this time, placeholder for future? idk.
+			//['previousslide',	() => { /* ... */ }],
+			//['nextslide',		() => { /* ... */ }],
+		];
+		for (const [action, handler] of action_handlers) {
+			try {
+				navigator.mediaSession.setActionHandler(action, handler);
+			} catch (error) {
+				write2log(`The media session action "${action}" is not supported yet.`);
+			}
+		}
+		try {
+			// Set playback event listeners
+			audio_element.addEventListener('play', () => { navigator.mediaSession.playbackState = 'playing'; });
+			audio_element.addEventListener('pause', () => { navigator.mediaSession.playbackState = 'paused'; });
+		}
+		catch (err) {
+			write2log(`Failed to set navigator.mediaSession.playbackState play/pause handlers`);
+		}
+	}
+
+	
 	/**
 	 * Updates the played history tab UI with the current song info.
 	 */
@@ -533,6 +603,7 @@
 		document.querySelector('#mark_timestamp').addEventListener('click', mark_favorited_timestamp, false);
 		document.querySelector('#clear_timestamps').addEventListener('click', clear_timestamps, false);
 		document.querySelector('#player_source').addEventListener('error', function(err){ if (! document.querySelector('audio').seeking) load_song_from_index()}, false);
+		setup_media_session_action_handlers();
 	}
 	
 	/**

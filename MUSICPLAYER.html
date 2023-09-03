@@ -638,7 +638,7 @@
 	   * @param {HTMLElement} el the element to be dissapered
 	   * @param {*} seconds the seconds to dissapear after
 	   */
-	  removeFadeOutAfter(el, seconds) {
+	  function removeFadeOutAfter(el, seconds) {
 	    setTimeout(() => {
 	      el.style.transition = "opacity 1s ease";
 	      el.style.opacity = 0;

@@ -162,7 +162,7 @@
 					throw err;
 				}
 				// else it is a network error, so keep waiting until we timeout in 60 seconds
-				write2log(`get_successful_fetch(${url}); //Offline... waiting to reconnect...`)
+				write2log(`get_successful_fetch(${url}); //Offline... waiting to reconnect...`,59);
 				await delay_until_connection(60);
 			}
 		}
@@ -173,21 +173,20 @@
 	 * @param url <String> The url to extract JSON from.
 	 * @returns result of JSON.parse.
 	*/
-	async function get_JSON(url) { write2log(`get_JSON(${url})`); let response = await get_successful_fetch(url); let data = await response.json(); write2log(null); return data; }
+	async function get_JSON(url) { write2log(`get_JSON(${url})`,2); let response = await get_successful_fetch(url); let data = await response.json(); return data; }
 	
 	/**
 	 * @param key <String> the mixcloud key/url endpoint of the song to be retrieved.
 	 * @returns <String> the url for the audio source of the given mixcloud key.
 	 */
 	async function retreive_audio_src(key) { 
-		write2log(`retreive_audio_src(${key})`);
+		write2log(`retreive_audio_src(${key})`,2);
 		// Attempts to get the url for the src of the given mixcloud key
 		var url = `https://justcors.com/l_n1ehx3zipc/https://www.dlmixcloud.com/ajax.php/?url=https://www.mixcloud.com${key}`;
 		var response = await get_successful_fetch(url)
 		var result_text = await response.text()
 		var resulting_json = JSON.parse(result_text)
 		var value = resulting_json['url'];
-		write2log(null);
 		return value;
 	}
 	
@@ -349,7 +348,7 @@
 	}
 	function setup_media_session_action_handlers() {
 		if (!("mediaSession" in navigator)) {
-			write2log(`No mediaSession in navigator.`);
+			write2log(`No mediaSession in navigator.`,2);
 		}
 		const audio_element = document.querySelector('audio');
 		const default_skip_time = 60; /* Time to skip in seconds by default */
@@ -377,7 +376,7 @@
 			try {
 				navigator.mediaSession.setActionHandler(action, handler);
 			} catch (error) {
-				write2log(`The media session action "${action}" is not supported yet.`);
+				write2log(`The media session action "${action}" is not supported yet.`,2);
 			}
 		}
 		try {
@@ -386,7 +385,7 @@
 			audio_element.addEventListener('pause', () => { navigator.mediaSession.playbackState = 'paused'; });
 		}
 		catch (err) {
-			write2log(`Failed to set navigator.mediaSession.playbackState play/pause handlers`);
+			write2log(`Failed to set navigator.mediaSession.playbackState play/pause handlers`,2);
 		}
 	}
 
@@ -441,14 +440,13 @@
 					.then(newSrc => {
 						if (newSrc && e.src != newSrc) {
 							e.src = newSrc; 
-							write2log(`Updated ${e.key} src to ${newSrc}!`);
-							write2log(null);
+							write2log(`Updated ${e.key} src to ${newSrc}!`,2);
 						}
 					});
 				}
 			}
 		} catch(err) {
-			write2log(`some ${err} error while attempting to get updated src of ${song.key}`);
+			write2log(`some ${err} error while attempting to get updated src of ${song.key}`,2);
 		}
 	
 	}
@@ -606,18 +604,49 @@
 		setup_media_session_action_handlers();
 	}
 	
-	/**
-	 * Debug function for visuals of logging.
-	 */
-	function write2log(val){
-		var l = document.querySelector("#log");
-		l.hidden = val == null;
-		if (val!=null) {
-			l.innerText = `${new Date().toLocaleString()}\n${val}`;
-			//console.log(l.innerText);
-		}
-	}
-	
+	function write2log(val, timeout = 0) {
+	    console.log(val);
+	    var ts = document.createTextNode(
+	      new Date().toLocaleTimeString("en-us", {
+	        hour12: false,
+	        hour: "2-digit",
+	        minute: "2-digit",
+	        second: "2-digit",
+	        fractionalSecondDigits: 3,
+	      })
+	    );
+	    var is_secondary_val_type = false;
+	    if (String(val) == "[object Object]") {
+	      val = JSON.stringify(val);
+	      is_secondary_val_type = true;
+	    }
+	    val = document.createTextNode(val);
+	    var newRow = document.createElement("tr");
+	    newRow.appendChild(document.createElement("td")).appendChild(ts);
+	    newRow.appendChild(document.createElement("td")).appendChild(val);
+	    if (is_secondary_val_type) {
+	      newRow.childNodes[1].style.color = "red";
+	    }
+	    var tbl = document.querySelector('#log_table_body');
+	    tbl.appendChild(newRow);
+	    tbl.hidden = false;
+	    if (timeout > 0) {
+	      removeFadeOutAfter(newRow, Math.max(timeout, 1));
+	    }
+	  }
+	  /** Fades an element after a given time, and deletes the object from the DOM/memory.
+	   * @param {HTMLElement} el the element to be dissapered
+	   * @param {*} seconds the seconds to dissapear after
+	   */
+	  function removeFadeOutAfter(el, seconds) {
+	    setTimeout(() => {
+	      el.style.transition = "opacity 1s ease";
+	      el.style.opacity = 0;
+	      setTimeout(function () {
+	        el.parentNode.removeChild(el);
+	      }, seconds * 1000);
+	    }, Math.max(seconds - 1, 1) * 1000);
+	  }
 	/**
 	 * @returns true if on mobile device, false otherwise.
 	 */
@@ -652,7 +681,10 @@
 	<p hidden>TIMESTAMPS:&nbsp;<button id="clear_timestamps">🆑</button></p>
 	<ul id="timestamps_list" hidden></ul>
 	</div>
-	<pre id="log" width="50%" ></pre>
+	<table id="log_table" >
+	        <thead id="log_table_header"><tr><th>timestamp</th><th>message</th></tr></thead>
+	        <tbody id="log_table_body"></tbody>
+    	</table>
 	<label hidden><input type="checkbox" id="allow_persistent_playlist" > Enable persistent storage of playlist</label>
 </body>
 </html>

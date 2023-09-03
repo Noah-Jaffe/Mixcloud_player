@@ -4,6 +4,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>MUSICPLAYER</title>
 <style>
+	:root { color-scheme: dark; }
 	button { font-size: 300%; padding: 2px 2px 2px 2px; background-color: rgba(0,0,0,0); border: none; }
 	button:hover { background-color: gray; }
 	#clear_timestamps { font-size: 100%; }
@@ -11,7 +12,8 @@
 	option { font-size: 18pt; }
 	audio { background-color: rgba(0,0,0,0.00); width: 90%; }
 	audio::-webkit-media-controls-play-button { transform-origin: center center; transform: scale(2,2.5); }
-	#log { font-size:10pt; word-wrap:break-word; }
+	#log_table:has(#log_table_body:empty) { display: none; }  /* The :has modifier does not work in firefox just yet. */
+	#log_table { font-size:10pt; word-wrap:break-word; font-family: Consolas, monaco, monospace; }
 </style>
 <script>
 	var PLAYER_HISTORY_STACK = [];
@@ -681,10 +683,10 @@
 	<p hidden>TIMESTAMPS:&nbsp;<button id="clear_timestamps">🆑</button></p>
 	<ul id="timestamps_list" hidden></ul>
 	</div>
+	<label hidden><input type="checkbox" id="allow_persistent_playlist" > Enable persistent storage of playlist</label>
 	<table id="log_table" >
 	        <thead id="log_table_header"><tr><th>timestamp</th><th>message</th></tr></thead>
 	        <tbody id="log_table_body"></tbody>
     	</table>
-	<label hidden><input type="checkbox" id="allow_persistent_playlist" > Enable persistent storage of playlist</label>
 </body>
 </html>

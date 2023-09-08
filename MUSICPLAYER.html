@@ -133,7 +133,7 @@
 		document.title = "Cleaning songs...";
 		prog.innerText = `Cleaning ${PLAYLIST_SONGS.length} songs...`;
 		// REMOVE BAD SONGS
-		var BAD_SONGS = ['/therealrons/rons-podcast-665/',]; 	// EXAMPLE VALUES, EDIT THIS AS WE SEE FIT
+		var BAD_SONGS = ['/therealrons/rons-podcast-665/','/FrankAndreasen/the-best-of-2018-the-dance-mixes/']; 	// EXAMPLE VALUES, EDIT THIS AS WE SEE FIT
 		var i = PLAYLIST_SONGS.length - 1;
 		while (i >= 0) {
 			if (PLAYLIST_SONGS[i].name in BAD_SONGS || PLAYLIST_SONGS[i].key in BAD_SONGS) {

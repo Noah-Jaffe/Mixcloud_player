@@ -1,0 +1,29 @@
+name: Musiclist updater
+
+on:
+  # Runs at midnight UTC every day
+  schedule:
+    - cron: '0 0 * * *'  
+  # Runs when the musicplayer.html file is updated
+  push:
+    paths:
+      - 'MUSICPLAYER.html'
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+
+      - name: Run the script and commit changes
+        run: |
+          chmod +x run_script.sh
+          ./run_script.sh
+
+      - name: Push changes
+        run: |
+          git config --global user.email "you@example.com"
+          git config --global user.name "Your Name"
+          git push

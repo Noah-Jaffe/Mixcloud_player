@@ -331,35 +331,7 @@
 		}catch(err){}
 	}
 
-	/**
-	 * Fired when a src fails to load in the audio player.
-	 * Checks the playlist song records that use that src value and attepts to get the new updated SRC for them. 
-	 * When successful it will update the src of the live PLAYLIST_SONG record.
-	 * This is a background thread!
-	 * @param src <str> the audio source string (url) to be checked for updates.
-	 */
-	function check_for_updated_src(src) {
-		if (!src) {
-			return null;
-		}
-		try {
-			for (let e of PLAYLIST_SONGS) {
-				if (e.src == src) {
-					let ns = e.src;
-					.then(newSrc => {
-						if (newSrc && e.src != newSrc) {
-							e.src = newSrc; 
-							write2log(`Updated ${e.key} src to ${newSrc}!`,2);
-						}
-					});
-				}
-			}
-		} catch(err) {
-			write2log(`some ${err} error while attempting to get updated src of ${song.key}`,2);
-		}
 	
-	}
-
 	/**
 	 * Updates the dropdown UI to display all of the available songs in PLAYLIST_SONGS. 
 	 * Will sort the PLAYLIST_SONGS.
@@ -477,8 +449,7 @@
 	window.onload = async function() {
 		load_volume();
 		document.querySelector('#shuffle_button').addEventListener('click', function(){document.querySelector('#shuffle_button').innerText = document.querySelector('#shuffle_button').innerText == "🔀" ? "🔃" : "🔀"}, false);
-		document.querySelector('#player_source').addEventListener('error', async function(err){ console.log(`Failed to load source value of ${this.src}`); check_for_updated_src(this.src); }, false);	
-		start_quick_start_song();
+		start_quick_start_song();		
 		load_timestamps();
 		update_dropdown_with_current_songs();
 		load_song_from_index(get_random_song_idx());

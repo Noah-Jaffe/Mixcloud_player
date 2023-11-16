@@ -15,103 +15,9 @@
 	#log_table:has(#log_table_body:empty) { display: none; }  /* The :has modifier does not work in firefox just yet. */
 	#log_table { font-size:10pt; word-wrap:break-word; font-family: Consolas, monaco, monospace; }
 </style>
+	<script src="./songs.js"></script>
 <script>
 	var PLAYER_HISTORY_STACK = [];
-	var PLAYLIST_SONGS = [];
-	var CUSTOM_PLAYLISTS_TO_LOAD = [
-			{mixcloud_search_key:"rons%20podcast%20%23", mixcloud_match_regex:/RONS.*?Podcast.*?\d{3,4}/i, name_to_replace:/RONS:? Podcast #?(\w+)/gmi, name_replace_with:`RONS: Podcast #$1`},
-			{mixcloud_search_key:"Liquid%20DnB%20Mix%20-%20Vol", mixcloud_match_regex:/Liquid DnB Mix - Vol 6[12469]/i, name_to_replace:" - ", name_replace_with:": "},
-			{mixcloud_search_key:"Lys_InTheMix", mixcloud_match_regex:/^lys_$/gmi, name_to_replace:/lys[_-]{1,2}|^(?!.*?lys[_-]{1,2})/gmi, name_replace_with:"Lys: "},
-			{mixcloud_search_key:"Frankie%203000", mixcloud_match_regex:/^FrankAndreasen$/gmi, name_to_replace:/^/gmi, name_replace_with:"Frankie 3000: "}
-		]
-	/**
-	 * @params - You can give it a list of strings that include the 
-	 * - "name" of the song.
-	 * - "key" of the song -> the `/artist/song/` part of the mixcloud.com/artist/song/ url.
-	 * - "src" of the song. -> the full url of the audio to be used as the source when loaded.
-	 * OR you can give it a dict with "name", "key", and/or "src" key value pairs.
-	 * valid usage:
-	 * add_song_record_to_playlist("RONS: Podcast #420", "/therealrons/rons-podcast-420/")
-	 * add_song_record_to_playlist("RONS: Podcast #420", "/therealrons/rons-podcast-420/", "https://stream5.mixcloud.com/secure/c/m4a/64/2/7/3/3/c31f-6b26-42c6-814d-2051f42337fc.m4a?sig=woS4_8jGlXDNMX-TmIuEnQ")
-	 * add_song_record_to_playlist({name:"RONS: Podcast #420", key:"/therealrons/rons-podcast-420/", src:"https://stream5.mixcloud.com/secure/c/m4a/64/2/7/3/3/c31f-6b26-42c6-814d-2051f42337fc.m4a?sig=woS4_8jGlXDNMX-TmIuEnQ"})
-	 * add_song_record_to_playlist({name:"RONS: Podcast #420", key:"/therealrons/rons-podcast-420/"})
-	 */
-	function add_song_record_to_playlist() {
-		function validate_song_record() {
-			var temp = {};
-			for (var x of arguments) {
-				if (x == null) {
-					continue;
-				}
-				if (typeof(x) == 'object' && (x.src || (x.name && x.key))) {
-					return validate_song_record(x?.name, x?.key, x?.src);
-				}
-				if (x?.toString().match(/^\/.*?\/.*?\/$/gmi)) {
-					// then its a key
-					temp['key'] = x;
-				} else if (x?.toString().match(/https?:\/\/.*\..*/gmi)){
-					temp['src'] = x;
-				} else {
-					temp['name'] = x;
-				}
-			}
-			return (((temp['src'] || (temp['key'] && temp['name'])) || false) && true ? temp : null);
-		}
-		function does_song_record_already_exist(record) {
-			for (var row of PLAYLIST_SONGS) {
-				if ((record.key && row.key && record.key == row.key) || (record.src && row.src && record.src == row.src)) 
-					return true
-			}
-			return false;
-		}
-		var song = validate_song_record(...arguments)
-		
-		if (song && song != {} && !does_song_record_already_exist(song)) {
-			PLAYLIST_SONGS.push(song);
-		}
-	}
-	
-	/**
-	 * Loads custom list of songs from mixcloud into the global {@linkcode PLAYLIST_SONGS} variable.
-	 * This function is also responsible for formatting the new records for {@linkcode PLAYLIST_SONGS} name of the song.
-	 * @param {HTMLElement=} debug - If given, it may use this HTMLElement (or subclass of HTMLElement) as a debugging print line.
-	 */
-	async function load_custom_songs(debug=null, mixcloud_search_query, mixcloud_match_regex, name_to_replace, name_replace_with) {
-		if (typeof(mixcloud_match_regex) == "string") {
-			mixcloud_match_regex = new RegExp(mixcloud_match_regex, "gmi")
-		}
-		var search_queue = [`https://api.mixcloud.com/search/?limit=100&q=${mixcloud_search_query}&type=cloudcast`];
-		if (debug) { debug.innerText = `${PLAYLIST_SONGS.length} songs loaded`;}
-		while (search_queue.length > 0) {
-			if (debug) { debug.innerText = debug.innerText.replace(new RegExp('(\\d+) songs loaded(\.*)', 'gm'), `${PLAYLIST_SONGS.length} songs loaded $2.`); }
-			var search_url = search_queue.pop();
-			var search_results = await get_JSON(search_url);
-			if ('data' in search_results) {
-				for (var i in search_results['data']) {
-					if (mixcloud_match_regex.exec(search_results['data'][i]['name']) !== null || mixcloud_match_regex.exec(search_results['data'][i]['user']['username']) !== null) {
-						add_song_record_to_playlist(name=search_results['data'][i]['name'].replace(name_to_replace, name_replace_with), key=search_results['data'][i]['key'])
-						if (debug) { debug.innerText = debug.innerText.replace(new RegExp('(\\d+) songs loaded(\.*)', 'gm'), `${PLAYLIST_SONGS.length} songs loaded $2`); }
-						document.title = `${PLAYLIST_SONGS.length} songs loaded...`;
-					}
-				}
-			}
-			if ('paging' in search_results) {
-				if ('next' in search_results['paging']) {
-					search_queue.push(search_results['paging']['next'])
-				}
-			}
-		}
-		add_song_record_to_playlist(name='>>: Hudson921 2000s 2010s mix 2323',key='/Hudson921/2000s-2010s-mix-2323/');
-		add_song_record_to_playlist(name='>>: robert toombs throwback e15 - 2000s 2010s', key='/robert-toombs/that-throwback-show-ep-15-2000s-2010s/');
-		add_song_record_to_playlist(name='>>: scotty fox friends of tom',key='/scotty-fox/friends-of-tom/');
-		add_song_record_to_playlist(name='>>: scotty fox grad mix 2021',key='/scotty-fox/grad-mix-2021/');
-		add_song_record_to_playlist(name='>>: scotty fox pumpkin spice season 2 never too latte',key='/scotty-fox/pumpkin-spice-season-2-never-too-latte/');
-		add_song_record_to_playlist(name='>>: scotty fox songs you might hear at a supermarket',key='/scotty-fox/songs-you-might-hear-at-a-supermarket/');
-		add_song_record_to_playlist(name='>>: scotty fox clarity',key='/scotty-fox/clarity/');
-		add_song_record_to_playlist(name='>>: scotty fox occupational therapy', key='/scotty-fox/occupational-therapy/');
-		add_song_record_to_playlist(name='>>: scotty fox the rhythm of the night',key='/scotty-fox/the-rhythm-of-the-night/');
-		add_song_record_to_playlist(name='frankie3000: L: DjJEM2 1069 latin julio mix 72023', key='/DjJEM2/djjem-1069-latin-julio-mix-72023/');
-	}
 	
 	/** 
 	 * README | EDIT HERE | NOTE | README | EDIT HERE | NOTE | README | EDIT HERE | NOTE | README | EDIT HERE | NOTE
@@ -191,16 +97,7 @@
 	 * @param key <String> the mixcloud key/url endpoint of the song to be retrieved.
 	 * @returns <String> the url for the audio source of the given mixcloud key.
 	 */
-	async function retreive_audio_src(key) { 
-		write2log(`retreive_audio_src(${key})`,2);
-		// Attempts to get the url for the src of the given mixcloud key
-		var url = `https://justcors.com/l_n1ehx3zipc/https://www.dlmixcloud.com/ajax.php/?url=mixcloud.com${key}`;
-		var response = await get_successful_fetch(url)
-		var result_text = await response.text()
-		var resulting_json = JSON.parse(result_text)
-		var value = resulting_json['url'];
-		return value;
-	}
+
 	
 	/**
 	 * Loads a random song index from the playlist queue, tries to not replay the last DONT_REPLAY_FROM_THE_LAST_X_SONGS songs.
@@ -306,7 +203,7 @@
 		if (PLAYLIST_SONGS[next_song].src == undefined) {
 			do {
 				try {
-					PLAYLIST_SONGS[next_song].src = await retreive_audio_src(PLAYLIST_SONGS[next_song].key);
+					PLAYLIST_SONGS[next_song].src = PLAYLIST_SONGS[next_song].src;
 				} catch (err) {
 					console.log(`Error while attempting to get src from song index #${next_song}, key = '${PLAYLIST_SONGS[next_song].key}', name = '${PLAYLIST_SONGS[next_song].name}', skipping to next index!`);
 					next_song++;
@@ -434,35 +331,7 @@
 		}catch(err){}
 	}
 
-	/**
-	 * Fired when a src fails to load in the audio player.
-	 * Checks the playlist song records that use that src value and attepts to get the new updated SRC for them. 
-	 * When successful it will update the src of the live PLAYLIST_SONG record.
-	 * This is a background thread!
-	 * @param src <str> the audio source string (url) to be checked for updates.
-	 */
-	function check_for_updated_src(src) {
-		if (!src) {
-			return null;
-		}
-		try {
-			for (let e of PLAYLIST_SONGS) {
-				if (e.src == src) {
-					let ns = retreive_audio_src(e.key)
-					.then(newSrc => {
-						if (newSrc && e.src != newSrc) {
-							e.src = newSrc; 
-							write2log(`Updated ${e.key} src to ${newSrc}!`,2);
-						}
-					});
-				}
-			}
-		} catch(err) {
-			write2log(`some ${err} error while attempting to get updated src of ${song.key}`,2);
-		}
 	
-	}
-
 	/**
 	 * Updates the dropdown UI to display all of the available songs in PLAYLIST_SONGS. 
 	 * Will sort the PLAYLIST_SONGS.
@@ -525,28 +394,8 @@
 		return JSON.parse(localStorage.getItem(key));
 	}
 	
-	/**
-	 * load_ functions get the persistent data and updates their respective live values.
-	 * save_ functions stores their respective live values to localStorage to be persistent.
-	 */
-	function load_playlist_data() {
-		let enabled = (load_persistent('ALLOW_PERSISTENT_PLAYLIST') == null? false : load_persistent('ALLOW_PERSISTENT_PLAYLIST'));
-		if (enabled) {
-			document.getElementById("allow_persistent_playlist").checked = true;
-			let plylst = load_persistent('PERSISTENT_PLAYLIST');
-			plylst.forEach(e=>{/*if(e.src) {*/ add_song_record_to_playlist(e)}/*}*/)
-		}
-	}
-	function save_playlist() {
-		update_persistent('ALLOW_PERSISTENT_PLAYLIST', document.getElementById("allow_persistent_playlist").checked);
-		if (document.getElementById("allow_persistent_playlist").checked) {
-			update_persistent('PERSISTENT_PLAYLIST',PLAYLIST_SONGS/*.filter(e=>e.src)*/, 0);
-		} else {
-			// delete this data as its potential to be large* data footprint
-			localStorage.update_persistent('PERSISTENT_PLAYLIST',mode=-1);
-			localStorage.update_persistent('PERSISTENT_PLAYLIST_GEN_DATE',mode=-1);
-		}
-	}
+	
+	
 	function load_volume() {
 		document.getElementById("player").volume = (load_persistent('VOLUME') == null? 1 : load_persistent('VOLUME')); 
 	}
@@ -599,12 +448,9 @@
 	 */
 	window.onload = async function() {
 		load_volume();
-		load_playlist_data();
 		document.querySelector('#shuffle_button').addEventListener('click', function(){document.querySelector('#shuffle_button').innerText = document.querySelector('#shuffle_button').innerText == "🔀" ? "🔃" : "🔀"}, false);
-		document.querySelector('#player_source').addEventListener('error', async function(err){ console.log(`Failed to load source value of ${this.src}`); check_for_updated_src(this.src); }, false);	
-		start_quick_start_song();
+		start_quick_start_song();		
 		load_timestamps();
-		await update_playlist_songs();
 		update_dropdown_with_current_songs();
 		load_song_from_index(get_random_song_idx());
 		document.querySelector('audio').addEventListener('ended', function(){ if (! document.querySelector('audio').seeking) load_song_from_index()}, false);

@@ -97,16 +97,7 @@
 	 * @param key <String> the mixcloud key/url endpoint of the song to be retrieved.
 	 * @returns <String> the url for the audio source of the given mixcloud key.
 	 */
-	async function retreive_audio_src(key) { 
-		write2log(`retreive_audio_src(${key})`,2);
-		// Attempts to get the url for the src of the given mixcloud key
-		var url = `https://justcors.com/l_n1ehx3zipc/https://www.dlmixcloud.com/ajax.php/?url=mixcloud.com${key}`;
-		var response = await get_successful_fetch(url)
-		var result_text = await response.text()
-		var resulting_json = JSON.parse(result_text)
-		var value = resulting_json['url'];
-		return value;
-	}
+
 	
 	/**
 	 * Loads a random song index from the playlist queue, tries to not replay the last DONT_REPLAY_FROM_THE_LAST_X_SONGS songs.
@@ -212,7 +203,7 @@
 		if (PLAYLIST_SONGS[next_song].src == undefined) {
 			do {
 				try {
-					PLAYLIST_SONGS[next_song].src = await retreive_audio_src(PLAYLIST_SONGS[next_song].key);
+					PLAYLIST_SONGS[next_song].src = PLAYLIST_SONGS[next_song].src;
 				} catch (err) {
 					console.log(`Error while attempting to get src from song index #${next_song}, key = '${PLAYLIST_SONGS[next_song].key}', name = '${PLAYLIST_SONGS[next_song].name}', skipping to next index!`);
 					next_song++;
@@ -354,7 +345,7 @@
 		try {
 			for (let e of PLAYLIST_SONGS) {
 				if (e.src == src) {
-					let ns = retreive_audio_src(e.key)
+					let ns = e.src;
 					.then(newSrc => {
 						if (newSrc && e.src != newSrc) {
 							e.src = newSrc; 

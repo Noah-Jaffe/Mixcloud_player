@@ -431,28 +431,8 @@
 		return JSON.parse(localStorage.getItem(key));
 	}
 	
-	/**
-	 * load_ functions get the persistent data and updates their respective live values.
-	 * save_ functions stores their respective live values to localStorage to be persistent.
-	 */
-	function load_playlist_data() {
-		let enabled = (load_persistent('ALLOW_PERSISTENT_PLAYLIST') == null? false : load_persistent('ALLOW_PERSISTENT_PLAYLIST'));
-		if (enabled) {
-			document.getElementById("allow_persistent_playlist").checked = true;
-			let plylst = load_persistent('PERSISTENT_PLAYLIST');
-			plylst.forEach(e=>{/*if(e.src) {*/ add_song_record_to_playlist(e)}/*}*/)
-		}
-	}
-	function save_playlist() {
-		update_persistent('ALLOW_PERSISTENT_PLAYLIST', document.getElementById("allow_persistent_playlist").checked);
-		if (document.getElementById("allow_persistent_playlist").checked) {
-			update_persistent('PERSISTENT_PLAYLIST',PLAYLIST_SONGS/*.filter(e=>e.src)*/, 0);
-		} else {
-			// delete this data as its potential to be large* data footprint
-			localStorage.update_persistent('PERSISTENT_PLAYLIST',mode=-1);
-			localStorage.update_persistent('PERSISTENT_PLAYLIST_GEN_DATE',mode=-1);
-		}
-	}
+	
+	
 	function load_volume() {
 		document.getElementById("player").volume = (load_persistent('VOLUME') == null? 1 : load_persistent('VOLUME')); 
 	}
@@ -505,12 +485,10 @@
 	 */
 	window.onload = async function() {
 		load_volume();
-		load_playlist_data();
 		document.querySelector('#shuffle_button').addEventListener('click', function(){document.querySelector('#shuffle_button').innerText = document.querySelector('#shuffle_button').innerText == "🔀" ? "🔃" : "🔀"}, false);
 		document.querySelector('#player_source').addEventListener('error', async function(err){ console.log(`Failed to load source value of ${this.src}`); check_for_updated_src(this.src); }, false);	
 		start_quick_start_song();
 		load_timestamps();
-		//await update_playlist_songs();
 		update_dropdown_with_current_songs();
 		load_song_from_index(get_random_song_idx());
 		document.querySelector('audio').addEventListener('ended', function(){ if (! document.querySelector('audio').seeking) load_song_from_index()}, false);

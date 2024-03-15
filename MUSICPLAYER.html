@@ -484,7 +484,7 @@
 			dropdown_selections[0].remove();
 		}
 		// Sort by name, then by key
-		PLAYLIST_SONGS.sort((a,b) => (a.name.toLowerCase() > b.name.toLowerCase()) ? 1 : ((b.name.toLowerCase() > a.name.toLowerCase()) ? -1 : (a.key?.toLowerCase() > b.key?.toLowerCase()) ? 1 : ((b?.key.toLowerCase() > a.key?.toLowerCase()) ? -1 : 0)));
+		PLAYLIST_SONGS.sort((a,b) => (a.name.toLowerCase() > b.name.toLowerCase()) ? 1 : ((b.name.toLowerCase() > a.name.toLowerCase()) ? -1 : (a.key?.toLowerCase() > b.key?.toLowerCase()) ? 1 : ((b.key?.toLowerCase() > a.key?.toLowerCase()) ? -1 : 0)));
 		while (i < PLAYLIST_SONGS.length) {
 			dropdown_selections.add(new Option(PLAYLIST_SONGS[i].name,PLAYLIST_SONGS[i].key));
 			++i;

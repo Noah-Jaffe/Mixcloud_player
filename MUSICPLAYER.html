@@ -551,8 +551,8 @@
 			update_persistent('PERSISTENT_PLAYLIST',PLAYLIST_SONGS/*.filter(e=>e.src)*/, 0);
 		} else {
 			// delete this data as its potential to be large* data footprint
-			localStorage.update_persistent('PERSISTENT_PLAYLIST',mode=-1);
-			localStorage.update_persistent('PERSISTENT_PLAYLIST_GEN_DATE',mode=-1);
+			update_persistent('PERSISTENT_PLAYLIST',mode=-1);
+			update_persistent('PERSISTENT_PLAYLIST_GEN_DATE',mode=-1);
 		}
 	}
 	function load_volume() {

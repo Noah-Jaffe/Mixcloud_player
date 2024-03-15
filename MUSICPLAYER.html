@@ -194,11 +194,19 @@
 	async function retreive_audio_src(key) { 
 		write2log(`retreive_audio_src(${key})`,2);
 		// Attempts to get the url for the src of the given mixcloud key
-		var url = `https://justcors.com/l_n1ehx3zipc/https://www.dlmixcloud.com/ajax.php/?url=mixcloud.com${key}`;
+		var url = `https://justcors.com/l_n1ehx3zipc/https://www.dlmixcloud.com/ajax.php?url=mixcloud.com${key}`;
 		var response = await get_successful_fetch(url)
 		var result_text = await response.text()
 		var resulting_json = JSON.parse(result_text)
 		var value = resulting_json['url'];
+		// new format: 
+		if (!value) {
+			for (var fmt of resulting_json['formats']) {
+				if (fmt['format_id'] == 'http') {
+					return fmt['url'];
+				}
+			}
+		}
 		return value;
 	}
 	
@@ -476,7 +484,7 @@
 			dropdown_selections[0].remove();
 		}
 		// Sort by name, then by key
-		PLAYLIST_SONGS.sort((a,b) => (a.name.toLowerCase() > b.name.toLowerCase()) ? 1 : ((b.name.toLowerCase() > a.name.toLowerCase()) ? -1 : (a.key.toLowerCase() > b.key.toLowerCase()) ? 1 : ((b.key.toLowerCase() > a.key.toLowerCase()) ? -1 : 0)));
+		PLAYLIST_SONGS.sort((a,b) => (a.name.toLowerCase() > b.name.toLowerCase()) ? 1 : ((b.name.toLowerCase() > a.name.toLowerCase()) ? -1 : (a.key?.toLowerCase() > b.key?.toLowerCase()) ? 1 : ((b?.key.toLowerCase() > a.key?.toLowerCase()) ? -1 : 0)));
 		while (i < PLAYLIST_SONGS.length) {
 			dropdown_selections.add(new Option(PLAYLIST_SONGS[i].name,PLAYLIST_SONGS[i].key));
 			++i;

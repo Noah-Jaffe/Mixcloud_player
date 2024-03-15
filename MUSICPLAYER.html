@@ -194,7 +194,7 @@
 	async function retreive_audio_src(key) { 
 		write2log(`retreive_audio_src(${key})`,2);
 		// Attempts to get the url for the src of the given mixcloud key
-		var url = `https://justcors.com/l_n1ehx3zipc/https://www.dlmixcloud.com/ajax.php?url=mixcloud.com${key}`;
+		var url = `https://justcors.com/l_n1ehx3zipc/https://www.dlmixcloud.com/ajax.php?url=https://www.mixcloud.com${key}`;
 		var response = await get_successful_fetch(url)
 		var result_text = await response.text()
 		var resulting_json = JSON.parse(result_text)

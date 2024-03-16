@@ -192,7 +192,9 @@
 	 * @returns <String> the url for the audio source of the given mixcloud key.
 	 */
 	async function retreive_audio_src(key) { 
-		write2log(`retreive_audio_src(${key})`,2);
+		// write2log(`retreive_audio_src(${key})`,2);
+		var logLines = [];
+		logLines.push(write2log(`retreive_audio_src(${key})`));
 		// Attempts to get the url for the src of the given mixcloud key
 		var url = `https://justcors.com/l_n1ehx3zipc/https://www.dlmixcloud.com/ajax.php?url=https://www.mixcloud.com${key}`;
 		var response = await get_successful_fetch(url)
@@ -201,12 +203,17 @@
 		var value = resulting_json['url'];
 		// new format: 
 		if (!value) {
+			logLines.push(write2log(`Attempted to get audio src link for ${key}, no 'url' key at level 0 in response`))
 			for (var fmt of resulting_json['formats']) {
 				if (fmt['format_id'] == 'http') {
-					return fmt['url'];
+					logLines.push(write2log(`Attempted to get audio src link for ${key}, found formats...format_id=='http' with url of '${fmt['url']}`))
+					value = fmt['url'];
+					break;
 				}
 			}
 		}
+		logLines.push(write2log(`returning: ${value}`))
+		logLines.forEach(e=> removeFadeOutAfter(e, 5))
 		return value;
 	}
 	
@@ -359,13 +366,6 @@
 		}
 	}
 	
-	 function write3log(value) {
-		var timestamp_list = document.querySelector('#timestamps_list');
-		var li = document.createElement("li");
-		li.appendChild(document.createTextNode(`${new Date().now()} > ${arguments.callee?.name} > ${value}`));
-		timestamp_list.appendChild(li);
-		console.log(value);
-	}
 	function setup_media_session_action_handlers() {
 		if (!("mediaSession" in navigator)) {
 			write2log(`No mediaSession in navigator.`,2);
@@ -394,6 +394,7 @@
 		];
 		for (const [action, handler] of action_handlers) {
 			try {
+				write2log(`Adding mediaSession action: ${action}`,5);
 				navigator.mediaSession.setActionHandler(action, handler);
 			} catch (error) {
 				write2log(`The media session action "${action}" is not supported yet.`,2);
@@ -437,8 +438,12 @@
 		source.setAttribute('src', src);
 		try{
 			audio.load();
-			try{audio.play();audio.muted = false;}catch(err){}
+			try{
+				audio.play();
+				audio.muted = false;
+			}catch(err){}
 			update_persistent('LAST_SONG_SRC', src, 0);	// save the src for the quickstart
+			navigator.mediaSession?.setPositionState({duration: audio.duration, playbackRate: audio.playbackRate, position: audio.currentTime}); 
 		}catch(err){}
 	}
 
@@ -624,49 +629,55 @@
 		setup_media_session_action_handlers();
 	}
 	
+	/** logs data to console and to visible element on page.
+	 * #param val (any) the value to log
+	 * @param timeout (number) if greater than 0, will remove the line from the log after timeout seconds.
+	 * @returns the row element <tr> that was logged
+ 	*/
 	function write2log(val, timeout = 0) {
-	    console.log(val);
-	    var ts = document.createTextNode(
-	      new Date().toLocaleTimeString("en-us", {
-	        hour12: false,
-	        hour: "2-digit",
-	        minute: "2-digit",
-	        second: "2-digit",
-	        fractionalSecondDigits: 3,
-	      })
-	    );
-	    var is_secondary_val_type = false;
-	    if (String(val) == "[object Object]") {
-	      val = JSON.stringify(val);
-	      is_secondary_val_type = true;
-	    }
-	    val = document.createTextNode(val);
-	    var newRow = document.createElement("tr");
-	    newRow.appendChild(document.createElement("td")).appendChild(ts);
-	    newRow.appendChild(document.createElement("td")).appendChild(val);
-	    if (is_secondary_val_type) {
-	      newRow.childNodes[1].style.color = "red";
-	    }
-	    var tbl = document.querySelector('#log_table_body');
-	    tbl.appendChild(newRow);
-	    tbl.hidden = false;
-	    if (timeout > 0) {
-	      removeFadeOutAfter(newRow, Math.max(timeout, 1));
-	    }
-	  }
-	  /** Fades an element after a given time, and deletes the object from the DOM/memory.
-	   * @param {HTMLElement} el the element to be dissapered
-	   * @param {*} seconds the seconds to dissapear after
-	   */
-	  function removeFadeOutAfter(el, seconds) {
-	    setTimeout(() => {
-	      el.style.transition = "opacity 1s ease";
-	      el.style.opacity = 0;
-	      setTimeout(function () {
-	        el.parentNode.removeChild(el);
-	      }, seconds * 1000);
-	    }, Math.max(seconds - 1, 1) * 1000);
-	  }
+			console.log(val);
+			var ts = document.createTextNode(
+				new Date().toLocaleTimeString("en-us", {
+					hour12: false,
+					hour: "2-digit",
+					minute: "2-digit",
+					second: "2-digit",
+					fractionalSecondDigits: 3,
+				})
+			);
+			var is_secondary_val_type = false;
+			if (String(val) == "[object Object]") {
+				val = JSON.stringify(val);
+				is_secondary_val_type = true;
+			}
+			val = document.createTextNode(val);
+			var newRow = document.createElement("tr");
+			newRow.appendChild(document.createElement("td")).appendChild(ts);
+			newRow.appendChild(document.createElement("td")).appendChild(val);
+			if (is_secondary_val_type) {
+				newRow.childNodes[1].style.color = "red";
+			}
+			var tbl = document.querySelector('#log_table_body');
+			tbl.appendChild(newRow);
+			tbl.hidden = false;
+			if (timeout > 0) {
+				removeFadeOutAfter(newRow, Math.max(timeout, 1));
+			}
+			return newRow;
+		}
+	/** Fades an element after a given time, and deletes the object from the DOM/memory.
+	 * @param {HTMLElement} el the element to be dissapered
+	 * @param {*} seconds the seconds to dissapear after
+	 */
+	function removeFadeOutAfter(el, seconds) {
+		setTimeout(() => {
+			el.style.transition = "opacity 1s ease";
+			el.style.opacity = 0;
+			setTimeout(function () {
+				el.parentNode.removeChild(el);
+			}, seconds * 1000);
+		}, Math.max(seconds - 1, 1) * 1000);
+	}
 	/**
 	 * @returns true if on mobile device, false otherwise.
 	 */
@@ -703,8 +714,8 @@
 	</div>
 	<label hidden><input type="checkbox" id="allow_persistent_playlist" > Enable persistent storage of playlist</label>
 	<table id="log_table" >
-	        <thead id="log_table_header"><tr><th>timestamp</th><th>message</th></tr></thead>
-	        <tbody id="log_table_body"></tbody>
-    	</table>
+		<thead id="log_table_header"><tr><th>timestamp</th><th>message</th></tr></thead>
+		<tbody id="log_table_body"></tbody>
+	</table>
 </body>
 </html>

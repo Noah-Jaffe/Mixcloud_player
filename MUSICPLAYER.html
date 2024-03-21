@@ -624,6 +624,9 @@
 		}
 	}
 
+	/**
+	 * Sets up the wake lock action handlers for the slider.
+	 */
 	function setup_wake_lock_action_handlers() {
 		if (!('wakeLock' in navigator)) {
 			// remove useless elements from screen
@@ -643,6 +646,9 @@
 		}
 	}
 
+	/**
+	 * Attempts to get the screen wake lock to prevent screen from turning off.
+	 */
 	async function request_screen_wake_lock() {
 		try {
 			let waitlock = await navigator.wakeLock.request('screen');
@@ -657,6 +663,11 @@
 			write2log(err, 60);
 		}
 	}
+	
+	/**
+	 * Called when we are trying to aquire the lock because it was released due to some 
+	 * circumstance that was not human pressing the toggle off button
+	 */
 	async function auto_retry_aquire_lock() {
 		if (document.visibilityState === "visible") {
 			try {
@@ -666,11 +677,17 @@
 			document.addEventListener("visibilitychange", auto_retry_aquire_lock, { once: true });
 		}
 	}
+	
+	/**
+	 * Releases the screen wake lock. If not human toggled, 
+	 * then it will try to reaquire the lock when the screen is next visible.
+	 */
 	async function release_screen_wake_lock(event) {
-		write2log(`Screen wake lock has been released`, 60);
 		document.querySelector("#screen_wake_lock_switch").checked = false
+		write2log(`Screen wake lock has been released`, 10);
 		if (!event?.isUserDisabled) {
 			// non user fired event
+			write2log(`Will try to reaquire screen wake lock when possible.`, 10);
 			document.addEventListener("visibilitychange", auto_retry_aquire_lock, { once: true });
 		}
 	}

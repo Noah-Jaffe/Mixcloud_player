@@ -635,7 +635,8 @@
 			write2log(`Screen wait lock feature disabled, no 'wakeLock' in navigator`, mobileCheck() ? null : 10);
 			//return;
 		}
-		const wakeLockToggle = document.querySelector("#screen_wake_lock_switch")
+		const wakeLockToggle = document.querySelector("#screen_wake_lock_switch");
+		wakeLockToggle._wakeLocks = [];
 		wakeLockToggle.onchange = async (e) => {
 			if (e.target.checked) {
 				await request_screen_wake_lock();
@@ -651,10 +652,11 @@
 	 */
 	async function request_screen_wake_lock() {
 		try {
-			let waitlock = await navigator.wakeLock.request('screen');
-			waitlock.addEventListener("release", async (event) => {
+			let wakeLock = await navigator.wakeLock.request('screen');
+			wakeLock.addEventListener("release", async (event) => {
 				await release_screen_wake_lock(event);
 			});
+			document.querySelector("#screen_wake_lock_switch")._wakeLocks.push(wakeLock);
 			//window.screen_wake_lock.release = release_screen_wake_lock;
 			write2log(`Screen wake lock aquired, will not go to sleep!`, 10);
 		} catch (err) {
@@ -683,14 +685,23 @@
 	 * then it will try to reaquire the lock when the screen is next visible.
 	 */
 	async function release_screen_wake_lock(event) {
-		document.querySelector("#screen_wake_lock_switch").checked = false
+		document.querySelector("#screen_wake_lock_switch").checked = false;
+		while (document.querySelector("#screen_wake_lock_switch")._wakeLocks.length > 0) {
+			try {
+				let wakeLock = document.querySelector("#screen_wake_lock_switch")._wakeLocks.pop();
+				if (wakeLock?.released == false) {
+					try {
+						wakeLock.release();
+					} catch {}
+				}
+			} catch {}
+		}
 		write2log(`Screen wake lock has been released`, 10);
 		if (!event?.isUserDisabled) {
 			// non user fired event
 			write2log(`Will try to reaquire screen wake lock when possible.`, 10);
 			document.addEventListener("visibilitychange", auto_retry_aquire_lock, { once: true });
 		}
-		navigator.wakeLock.request().then(e=>e.release());
 	}
 
 	/**

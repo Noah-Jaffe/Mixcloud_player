@@ -637,7 +637,7 @@
 		window.screen_wake_lock_mode = wakeLockToggle.checked;
 		wakeLockToggle.onchange = async (e) => {
 			if (e.target.checked) {
-				await request_screen_wake_lock();
+				window.screen_wake_lock = await request_screen_wake_lock();
 			} else {
 				// toggle off
 				if (window.screen_wake_lock?.release) { 

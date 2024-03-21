@@ -14,6 +14,25 @@
 	audio::-webkit-media-controls-play-button { transform-origin: center center; transform: scale(2,2.5); }
 	#log_table:has(#log_table_body:empty) { display: none; }  /* The :has modifier does not work in firefox just yet. */
 	#log_table { font-size:10pt; word-wrap:break-word; font-family: Consolas, monaco, monospace; }
+	#log_table tr { transition: 1s opacity ease-in, 0.5s height ease; }
+</style>
+<style id="CSS_screen_wake_lock">
+	/* Screen wake lock css, for the fancy togglabe slider */
+	.slider-toggle-switch { --slider-ts-width: 65px;--slider-ts-height: 30px; --slider-ts-switch-width: 30px; --slider-ts-color: #3498db; --slider-ts-color-unchecked: #ccc; --slider-ts-shadow-color: rgba(0, 0, 0, 0.5); --slider-ts-input-font-size: 0.8rem; --slider-ts-input-font-color: #fff; --slider-ts-input-checked-content: "ON"; --slider-ts-input-unchecked-content: "OFF"; --slider-ts-switch-background-color: #fff; --slider-ts-label-color: #000; color: var(--slider-ts-input-font-color); display: inline-flex; align-items: center; user-select: none; position: relative; vertical-align: middle; margin-bottom: 0; }
+	.slider-toggle-switch:hover { cursor: pointer; }
+	.slider-toggle-switch>input[type="checkbox"] { position: absolute; opacity: 0; }
+	.slider-toggle-switch>input[type="checkbox"]+.slider_toggle { border-radius: 4px; align-items: center; position: relative; overflow: hidden; flex-shrink: 0; width: var(--slider-ts-width); height: var(--slider-ts-height); margin: 0; cursor: pointer; transition: background 200ms linear, box-shadow 200ms linear; }
+	.slider-toggle-switch>input[type="checkbox"]+.slider_toggle:before { content: var(--slider-ts-input-checked-content); opacity: 0; }
+	.slider-toggle-switch>input[type="checkbox"]+.slider_toggle:after { content: var(--slider-ts-input-unchecked-content); left: var(--slider-ts-switch-width); }
+	.slider-toggle-switch>input[type="checkbox"]+.slider_toggle:before,
+	.slider-toggle-switch>input[type="checkbox"]+.slider_toggle:after { display: flex; align-items: center; position: absolute; z-index: 2; height: 100%; justify-content: center; width: calc(100% - var(--slider-ts-switch-width)); font-size: var(--slider-ts-input-font-size); transition: all 200ms linear; }
+	.slider-toggle-switch>input[type="checkbox"]+.slider_toggle>.slider_switch { background-color: var(--slider-ts-switch-background-color); border-radius: 6px; display: block; height: 100%; width: var(--slider-ts-switch-width); position: absolute; right: 0; z-index: 3; box-sizing: border-box; transition: right 200ms linear, border-color 200ms linear; }
+	.slider-toggle-switch>input[type="checkbox"]:checked+.slider_toggle { background-color: var(--slider-ts-color); }
+	.slider-toggle-switch>input[type="checkbox"]:checked+.slider_toggle:before { opacity: 1; }
+	.slider-toggle-switch>input[type="checkbox"]:checked+.slider_toggle:after { opacity: 0; }
+	.slider-toggle-switch>input[type="checkbox"]:checked+.slider_toggle>.slider_switch { border-width: 3px; border-style: solid; border-color: var(--slider-ts-color); }
+	.slider-toggle-switch>input[type="checkbox"]:not(:checked)+.slider_toggle { background-color: var(--slider-ts-color-unchecked); }
+	.slider-toggle-switch>input[type="checkbox"]:not(:checked)+.slider_toggle>.slider_switch { border-width: 3px; border-style: solid; border-color: var(--slider-ts-color-unchecked); right: calc(100% - var(--slider-ts-switch-width)); }
 </style>
 <script src="custom.js"> /* load CUSTOM_PLAYLISTS_TO_LOAD and INDIVIDUAL_TRACKS_TO_LOAD */ </script>
 <script>
@@ -606,6 +625,86 @@
 	}
 
 	/**
+	 * Sets up the wake lock action handlers for the slider.
+	 */
+	function setup_wake_lock_action_handlers() {
+		if (!('wakeLock' in navigator)) {
+			// remove useless elements from screen
+			document.querySelector("#screen_wake_lock_toggle").remove();
+			document.querySelector("#CSS_screen_wake_lock").remove();
+			write2log(`Screen wait lock feature disabled, no 'wakeLock' in navigator`, mobileCheck() ? null : 10);
+			//return;
+		}
+		const wakeLockToggle = document.querySelector("#screen_wake_lock_switch");
+		wakeLockToggle._wakeLocks = [];
+		wakeLockToggle.onchange = async (e) => {
+			if (e.target.checked) {
+				await request_screen_wake_lock();
+			} else {
+				// toggle off
+				await release_screen_wake_lock({isUserDisabled:true});
+			}
+		}
+	}
+
+	/**
+	 * Attempts to get the screen wake lock to prevent screen from turning off.
+	 */
+	async function request_screen_wake_lock() {
+		try {
+			let wakeLock = await navigator.wakeLock.request('screen');
+			wakeLock.addEventListener("release", async (event) => {
+				await release_screen_wake_lock(event);
+			});
+			document.querySelector("#screen_wake_lock_switch")._wakeLocks.push(wakeLock);
+			//window.screen_wake_lock.release = release_screen_wake_lock;
+			write2log(`Screen wake lock aquired, will not go to sleep!`, 10);
+		} catch (err) {
+			// if wake lock request fails - usually system related, such as battery
+			write2log(`Failed to aquire screen wake lock!`, 60);
+			write2log(err, 60);
+		}
+	}
+	
+	/**
+	 * Called when we are trying to aquire the lock because it was released due to some 
+	 * circumstance that was not human pressing the toggle off button
+	 */
+	async function auto_retry_aquire_lock() {
+		if (document.visibilityState === "visible") {
+			try {
+				document.querySelector("#screen_wake_lock_switch").checked = true;
+			} catch {}
+		} else {
+			document.addEventListener("visibilitychange", auto_retry_aquire_lock, { once: true });
+		}
+	}
+	
+	/**
+	 * Releases the screen wake lock. If not human toggled, 
+	 * then it will try to reaquire the lock when the screen is next visible.
+	 */
+	async function release_screen_wake_lock(event) {
+		document.querySelector("#screen_wake_lock_switch").checked = false;
+		while (document.querySelector("#screen_wake_lock_switch")._wakeLocks.length > 0) {
+			try {
+				let wakeLock = document.querySelector("#screen_wake_lock_switch")._wakeLocks.pop();
+				if (wakeLock?.released == false) {
+					try {
+						wakeLock.release();
+					} catch {}
+				}
+			} catch {}
+		}
+		write2log(`Screen wake lock has been released`, 10);
+		if (!event?.isUserDisabled) {
+			// non user fired event
+			write2log(`Will try to reaquire screen wake lock when possible.`, 10);
+			document.addEventListener("visibilitychange", auto_retry_aquire_lock, { once: true });
+		}
+	}
+
+	/**
 	 * onload event:
 	 * 1. Loads any persistent data.
 	 * 2. Adds events to UI objects when they should become available.
@@ -619,6 +718,7 @@
 		document.querySelector('#player_source').addEventListener('error', async function(err){ console.log(`Failed to load source value of ${this.src}`); check_for_updated_src(this.src); }, false);	
 		start_quick_start_song();
 		load_timestamps();
+		setup_wake_lock_action_handlers();
 		await update_playlist_songs();
 		update_dropdown_with_current_songs();
 		load_song_from_index(get_random_song_idx());
@@ -706,6 +806,10 @@
 		<button id="shuffle_button" hidden>🔀</button>
 		<button id="skip" hidden>⏭</button>
 		<button id="mark_timestamp" hidden>⭐</button>
+		<label id="screen_wake_lock_toggle" class="slider-toggle-switch" for="screen_wake_lock_switch" data-size="" style="--slider-ts-input-checked-content: 'Screen wake locked';--slider-ts-input-unchecked-content: 'Screen sleep allowed';--slider-ts-width: 150px;" hidden>
+			<input id="screen_wake_lock_switch" type="checkbox" />
+			<span class="slider_toggle"><span class="slider_switch"></span></span>
+		</label>
 	</div>
 	<div><audio controls autoplay id="player" hidden><source src="data:audio/ogg;base64,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GEMppJRSSimllFJKKaWUUkoppZRSSimllFJKKaWUUkgppZRSSimllFJKKaWUUkoppZRSSimllFJKKaWUUkoppZRSSimllFJKKaWUUkqppJRSSimllFJKKaWUUkoppZRSSimllFJKKaWUUkoppZRSSimllFJKKaWUUkoppZRSSimllFJKKaWUUkoppZRSSimllFJKKaWUUkoppZRSSimllFJKKaWUUkoppZRSSimllFJKKaWUUkoppZRSSimllFJKKaWUUkoppZRSSimllFJKKaWUUkoppZRSSimllFJKKaWUUkoppZRSSimllFJKKaWUUkoppZRSSimllFJKKaWUUkoppZRSSimllFJKKaWUUkoppZRSSimllFJKKaWUUkoppZRSSimllFJKKaWUUkoplVJKKaWUUkoppZRSSimllFJKKaWUUkoppZRSSimllFJKKaWUUkoppZRSSimllFJKKaWUUkoppZRSSimllFJKKaWUUkoppZRSSimllFJKKaWUUkoppZRSCgCQinAAkHowoQwUGrISAEgFAACMUUopxpyDEDHmGGPQSSgpYsw5xhyUklLlHIQQUmktt8o5CCGk1FJtmXNSWosx5hgz56SkFFvNOYdSUoux5ppr7qS0VmuuNedaWqs115xzzbm0FmuuOdecc8sx15xzzjnnGHPOOeecc84FAOA0OACAHtiwOsJJ0VhgoSErAYBUAAACGaUYc8456BBSjDnnHIQQIoUYc845CCFUjDnnHHQQQqgYc8w5CCGEkDnnHIQQQgghcw466CCEEEIHHYQQQgihlM5BCCGEEEooIYQQQgghhBA6CCGEEEIIIYQQQgghhFJKCCGEEEIJoZRQAABggQMAQIANqyOcFI0FFhqyEgAAAgCAHJagUs6EQY5Bjw1BylEzDUJMOdGZYk5qMxVTkDkQnXQSGWpB2V4yCwAAgCAAIMAEEBggKPhCCIgxAABBiMwQCYVVsMCgDBoc5gHAA0SERACQmKBIu7iALgNc0MVdB0IIQhCCWBxAAQk4OOGGJ97whBucoFNU6iAAAAAAAAwA4AEA4KAAIiKaq7C4wMjQ2ODo8AgAAAAAABYA+AAAOD6AiIjmKiwuMDI0Njg6PAIAAAAAAAAAAICAgAAAAAAAQAAAAICAT2dnUwAEAAAAAAAAAADwOoUqAgAAAJxxaEsBAQA=" type="audio/mp4" id="player_source"></audio></div>
 	<div>

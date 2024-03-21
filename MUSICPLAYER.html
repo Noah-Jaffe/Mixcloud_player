@@ -646,37 +646,34 @@
 			}
 		}
 	}
-	var screen_wake_lock_request_lock = false;
+
 	async function request_screen_wake_lock() {
-		if (screen_wake_lock_request_lock) {
-			write2log(`Screen wake lock request already in progress`, 1);
-			return;
-		}
-		screen_wake_lock_request_lock = true;
 		try {
 			window.screen_wake_lock = await navigator.wakeLock.request('screen');
-			window.screen_wake_lock.release = (event) => {
-				const uiSwitch = document.querySelector("#screen_wake_lock_switch");
-				if (uiSwitch.checked) {
-					uiSwitch.checked = false;
-				}
-				write2log(`Screen wake lock has been released`, 60);
-				// TODO: retry to get screen wake lock?
-				if (!event.isTrusted) {
-					// non user fired event
-					write2log(`should i try to get new lock?`,60);
-				}
-			}
-			screen_wake_lock_request_lock = true;
+			window.screen_wake_lock.release = release_screen_wake_lock;
+			write2log(`Screen wake lock aquired, will not go to sleep!`, 10);
 		} catch (err) {
 			// if wake lock request fails - usually system related, such as battery
 			write2log(`Failed to aquire screen wake lock!`, 60);
 			write2log(err, 60);
-			screen_wake_lock_request_lock = false;
 		}
 	}
 
-	
+	function release_screen_wake_lock(event) {
+		const uiSwitch = document.querySelector("#screen_wake_lock_switch");
+		if (uiSwitch.checked) {
+			uiSwitch.checked = false;
+		}
+		write2log(`Screen wake lock has been released`, 60);
+		// TODO: retry to get screen wake lock?
+		if (!event.isTrusted) {
+			// non user fired event
+			write2log(`should i try to get new lock?`);
+		} else {
+			write2log(`dont try to get new lock?`);
+		}
+	}
+
 	/**
 	 * onload event:
 	 * 1. Loads any persistent data.

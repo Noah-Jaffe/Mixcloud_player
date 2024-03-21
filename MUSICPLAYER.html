@@ -424,7 +424,66 @@
 		}
 	}
 
-	
+	function setup_gesture_handlers() {
+		if (!("PointerEvent" in window)) {
+			write2log(`No PointerEvent in window, gesture controls will not be enabled!`,2);
+		}
+		var start = {};
+		var end = {};
+		var tracking = false;
+		var thresholdTime = 500;
+		var thresholdDistance = 75;
+		gestureStart = function(e) {
+			tracking = true;
+			/* Hack - would normally use e.timeStamp but it's whack in Fx/Android */
+			start.t = new Date().getTime();
+			start.x = e.clientX;
+			start.y = e.clientY;
+		};
+		gestureMove = function(e) {
+			if (tracking) {
+				e.preventDefault();
+				end.x = e.clientX;
+				end.y = e.clientY;
+			}
+		}
+		gestureEnd = function(e) {
+			if (tracking) {
+				tracking = false;
+				var now = new Date().getTime();
+				var deltaTime = now - start.t;
+				var deltaX = end.x - start.x;
+				var deltaY = end.y - start.y;
+				/* work out what the movement was */
+				if (deltaTime > thresholdTime) {
+					/* gesture too slow */
+					return;
+				} else {
+					if ((deltaX > thresholdDistance)&&(Math.abs(deltaY) < thresholdDistance)) {
+						handle_gesture_right();
+					} else if ((-deltaX > thresholdDistance)&&(Math.abs(deltaY) < thresholdDistance)) {
+						handle_gesture_left();
+					} else if ((deltaY > thresholdDistance)&&(Math.abs(deltaX) < thresholdDistance)) {
+						handle_gesture_down();
+					} else if ((-deltaY > thresholdDistance)&&(Math.abs(deltaX) < thresholdDistance)) {
+						handle_gesture_up();
+					} else {
+						// do nothing, undefined behavior.
+					}
+				}
+			}
+		}
+		handle_gesture_left = function()	{ write2log(`Gesture fired: LEFT`, 1);		audio_element.currentTime = 0; }
+		handle_gesture_right = function()	{ write2log(`Gesture fired: RIGHT`, 1);	load_song_from_index(); }
+		handle_gesture_up = function()		{ write2log(`Gesture fired: UP`, 1);		document.querySelector('#shuffle_button').click(); }
+		handle_gesture_down = function()	{ write2log(`Gesture fired: DOWN`, 1);		load_song_from_index(); }
+		document.addEventListener('pointerdown', gestureStart, false);
+		document.addEventListener('pointermove', gestureMove, false);
+		document.addEventListener('pointerup', gestureEnd, false);
+		document.addEventListener('pointerleave', gestureEnd, false);
+		document.addEventListener('pointercancel', gestureEnd, false);
+	}
+
 	/**
 	 * Updates the played history tab UI with the current song info.
 	 */
@@ -626,7 +685,7 @@
 			document.querySelector("#screen_wake_lock_toggle").remove();
 			document.querySelector("#CSS_screen_wake_lock").remove();
 			write2log(`Screen wait lock feature disabled, no 'wakeLock' in navigator`, mobileCheck() ? null : 10);
-			//return;
+			return;
 		}
 		const wakeLockToggle = document.querySelector("#screen_wake_lock_switch");
 		wakeLockToggle._wakeLocks = [];
@@ -697,39 +756,12 @@
 		}
 	}
 
-	/**
-	 * onload event:
-	 * 1. Loads any persistent data.
-	 * 2. Adds events to UI objects when they should become available.
-	 * 3. Retreives the playlists.
-	 * 4. Starts playing music.
-	 */
-	window.onload = async function() {
-		load_volume();
-		load_playlist_data();
-		document.querySelector('#shuffle_button').addEventListener('click', function(){document.querySelector('#shuffle_button').innerText = document.querySelector('#shuffle_button').innerText == "🔀" ? "🔃" : "🔀"}, false);
-		document.querySelector('#player_source').addEventListener('error', async function(err){ console.log(`Failed to load source value of ${this.src}`); check_for_updated_src(this.src); }, false);	
-		start_quick_start_song();
-		load_timestamps();
-		setup_wake_lock_action_handlers();
-		await update_playlist_songs();
-		update_dropdown_with_current_songs();
-		load_song_from_index(get_random_song_idx());
-		document.querySelector('audio').addEventListener('ended', function(){ if (! document.querySelector('audio').seeking) load_song_from_index()}, false);
-		document.querySelector('#songlist_selector').addEventListener('change', load_selected_song, false);
-		document.querySelector('#skip').addEventListener('click', load_song_from_index, false);
-		document.querySelector('#mark_timestamp').addEventListener('click', mark_favorited_timestamp, false);
-		document.querySelector('#clear_timestamps').addEventListener('click', clear_timestamps, false);
-		document.querySelector('#player_source').addEventListener('error', function(err){ if (! document.querySelector('audio').seeking) load_song_from_index()}, false);
-		setup_media_session_action_handlers();
-	}
-	
 	/** logs data to console and to visible element on page.
 	 * #param val (any) the value to log
 	 * @param timeout (number) if greater than 0, will remove the line from the log after timeout seconds.
 	 * @returns the row element <tr> that was logged
  	*/
-	function write2log(val, timeout = 0) {
+	 function write2log(val, timeout = 0) {
 			console.log(val);
 			var ts = document.createTextNode(
 				new Date().toLocaleTimeString("en-us", {
@@ -760,6 +792,7 @@
 			}
 			return newRow;
 		}
+	
 	/** Fades an element after a given time, and deletes the object from the DOM/memory.
 	 * @param {HTMLElement} el the element to be dissapered
 	 * @param {*} seconds the seconds to dissapear after
@@ -773,11 +806,42 @@
 			}, seconds * 1000);
 		}, Math.max(seconds - 1, 1) * 1000);
 	}
+
 	/**
-	 * @returns true if on mobile device, false otherwise.
+	 * @returns true if on mobile device, false otherwise. Not 100% accurate.
 	 */
 	function mobileCheck() {
-		return (/(android|bb\d+|meego).+mobile|avantgo|bada\/|blackberry|blazer|compal|elaine|fennec|hiptop|iemobile|ip(hone|od)|iris|kindle|lge |maemo|midp|mmp|mobile.+firefox|netfront|opera m(ob|in)i|palm( os)?|phone|p(ixi|re)\/|plucker|pocket|psp|series(4|6)0|symbian|treo|up\.(browser|link)|vodafone|wap|windows ce|xda|xiino/i.test(navigator.userAgent||navigator.vendor||window.opera)||/1207|6310|6590|3gso|4thp|50[1-6]i|770s|802s|a wa|abac|ac(er|oo|s\-)|ai(ko|rn)|al(av|ca|co)|amoi|an(ex|ny|yw)|aptu|ar(ch|go)|as(te|us)|attw|au(di|\-m|r |s )|avan|be(ck|ll|nq)|bi(lb|rd)|bl(ac|az)|br(e|v)w|bumb|bw\-(n|u)|c55\/|capi|ccwa|cdm\-|cell|chtm|cldc|cmd\-|co(mp|nd)|craw|da(it|ll|ng)|dbte|dc\-s|devi|dica|dmob|do(c|p)o|ds(12|\-d)|el(49|ai)|em(l2|ul)|er(ic|k0)|esl8|ez([4-7]0|os|wa|ze)|fetc|fly(\-|_)|g1 u|g560|gene|gf\-5|g\-mo|go(\.w|od)|gr(ad|un)|haie|hcit|hd\-(m|p|t)|hei\-|hi(pt|ta)|hp( i|ip)|hs\-c|ht(c(\-| |_|a|g|p|s|t)|tp)|hu(aw|tc)|i\-(20|go|ma)|i230|iac( |\-|\/)|ibro|idea|ig01|ikom|im1k|inno|ipaq|iris|ja(t|v)a|jbro|jemu|jigs|kddi|keji|kgt( |\/)|klon|kpt |kwc\-|kyo(c|k)|le(no|xi)|lg( g|\/(k|l|u)|50|54|\-[a-w])|libw|lynx|m1\-w|m3ga|m50\/|ma(te|ui|xo)|mc(01|21|ca)|m\-cr|me(rc|ri)|mi(o8|oa|ts)|mmef|mo(01|02|bi|de|do|t(\-| |o|v)|zz)|mt(50|p1|v )|mwbp|mywa|n10[0-2]|n20[2-3]|n30(0|2)|n50(0|2|5)|n7(0(0|1)|10)|ne((c|m)\-|on|tf|wf|wg|wt)|nok(6|i)|nzph|o2im|op(ti|wv)|oran|owg1|p800|pan(a|d|t)|pdxg|pg(13|\-([1-8]|c))|phil|pire|pl(ay|uc)|pn\-2|po(ck|rt|se)|prox|psio|pt\-g|qa\-a|qc(07|12|21|32|60|\-[2-7]|i\-)|qtek|r380|r600|raks|rim9|ro(ve|zo)|s55\/|sa(ge|ma|mm|ms|ny|va)|sc(01|h\-|oo|p\-)|sdk\/|se(c(\-|0|1)|47|mc|nd|ri)|sgh\-|shar|sie(\-|m)|sk\-0|sl(45|id)|sm(al|ar|b3|it|t5)|so(ft|ny)|sp(01|h\-|v\-|v )|sy(01|mb)|t2(18|50)|t6(00|10|18)|ta(gt|lk)|tcl\-|tdg\-|tel(i|m)|tim\-|t\-mo|to(pl|sh)|ts(70|m\-|m3|m5)|tx\-9|up(\.b|g1|si)|utst|v400|v750|veri|vi(rg|te)|vk(40|5[0-3]|\-v)|vm40|voda|vulc|vx(52|53|60|61|70|80|81|83|85|98)|w3c(\-| )|webc|whit|wi(g |nc|nw)|wmlb|wonu|x700|yas\-|your|zeto|zte\-/i.test((navigator.userAgent||navigator.vendor||window.opera).substr(0,4)));
+		const checkByUserAgent = (/(android|bb\d+|meego).+mobile|avantgo|bada\/|blackberry|blazer|compal|elaine|fennec|hiptop|iemobile|ip(hone|od)|iris|kindle|lge |maemo|midp|mmp|mobile.+firefox|netfront|opera m(ob|in)i|palm( os)?|phone|p(ixi|re)\/|plucker|pocket|psp|series(4|6)0|symbian|treo|up\.(browser|link)|vodafone|wap|windows ce|xda|xiino/i.test(navigator.userAgent||navigator.vendor||window.opera)||/1207|6310|6590|3gso|4thp|50[1-6]i|770s|802s|a wa|abac|ac(er|oo|s\-)|ai(ko|rn)|al(av|ca|co)|amoi|an(ex|ny|yw)|aptu|ar(ch|go)|as(te|us)|attw|au(di|\-m|r |s )|avan|be(ck|ll|nq)|bi(lb|rd)|bl(ac|az)|br(e|v)w|bumb|bw\-(n|u)|c55\/|capi|ccwa|cdm\-|cell|chtm|cldc|cmd\-|co(mp|nd)|craw|da(it|ll|ng)|dbte|dc\-s|devi|dica|dmob|do(c|p)o|ds(12|\-d)|el(49|ai)|em(l2|ul)|er(ic|k0)|esl8|ez([4-7]0|os|wa|ze)|fetc|fly(\-|_)|g1 u|g560|gene|gf\-5|g\-mo|go(\.w|od)|gr(ad|un)|haie|hcit|hd\-(m|p|t)|hei\-|hi(pt|ta)|hp( i|ip)|hs\-c|ht(c(\-| |_|a|g|p|s|t)|tp)|hu(aw|tc)|i\-(20|go|ma)|i230|iac( |\-|\/)|ibro|idea|ig01|ikom|im1k|inno|ipaq|iris|ja(t|v)a|jbro|jemu|jigs|kddi|keji|kgt( |\/)|klon|kpt |kwc\-|kyo(c|k)|le(no|xi)|lg( g|\/(k|l|u)|50|54|\-[a-w])|libw|lynx|m1\-w|m3ga|m50\/|ma(te|ui|xo)|mc(01|21|ca)|m\-cr|me(rc|ri)|mi(o8|oa|ts)|mmef|mo(01|02|bi|de|do|t(\-| |o|v)|zz)|mt(50|p1|v )|mwbp|mywa|n10[0-2]|n20[2-3]|n30(0|2)|n50(0|2|5)|n7(0(0|1)|10)|ne((c|m)\-|on|tf|wf|wg|wt)|nok(6|i)|nzph|o2im|op(ti|wv)|oran|owg1|p800|pan(a|d|t)|pdxg|pg(13|\-([1-8]|c))|phil|pire|pl(ay|uc)|pn\-2|po(ck|rt|se)|prox|psio|pt\-g|qa\-a|qc(07|12|21|32|60|\-[2-7]|i\-)|qtek|r380|r600|raks|rim9|ro(ve|zo)|s55\/|sa(ge|ma|mm|ms|ny|va)|sc(01|h\-|oo|p\-)|sdk\/|se(c(\-|0|1)|47|mc|nd|ri)|sgh\-|shar|sie(\-|m)|sk\-0|sl(45|id)|sm(al|ar|b3|it|t5)|so(ft|ny)|sp(01|h\-|v\-|v )|sy(01|mb)|t2(18|50)|t6(00|10|18)|ta(gt|lk)|tcl\-|tdg\-|tel(i|m)|tim\-|t\-mo|to(pl|sh)|ts(70|m\-|m3|m5)|tx\-9|up(\.b|g1|si)|utst|v400|v750|veri|vi(rg|te)|vk(40|5[0-3]|\-v)|vm40|voda|vulc|vx(52|53|60|61|70|80|81|83|85|98)|w3c(\-| )|webc|whit|wi(g |nc|nw)|wmlb|wonu|x700|yas\-|your|zeto|zte\-/i.test((navigator.userAgent||navigator.vendor||window.opera).substr(0,4)));
+		const checkByTouchScreen = ('ontouchstart' in window) || (navigator.maxTouchPoints > 0) || (navigator.msMaxTouchPoints > 0);
+		return checkByTouchScreen || checkByUserAgent;
+	}
+
+	/**
+	 * onload event:
+	 * 1. Loads any persistent data.
+	 * 2. Adds events to UI objects when they should become available.
+	 * 3. Retreives the playlists.
+	 * 4. Starts playing music.
+	 */
+	window.onload = async function() {
+		load_volume();
+		load_playlist_data();
+		document.querySelector('#shuffle_button').addEventListener('click', function(){document.querySelector('#shuffle_button').innerText = document.querySelector('#shuffle_button').innerText == "🔀" ? "🔃" : "🔀"}, false);
+		document.querySelector('#player_source').addEventListener('error', async function(err){ console.log(`Failed to load source value of ${this.src}`); check_for_updated_src(this.src); }, false);	
+		start_quick_start_song();
+		load_timestamps();
+		setup_wake_lock_action_handlers();
+		await update_playlist_songs();
+		update_dropdown_with_current_songs();
+		load_song_from_index(get_random_song_idx());
+		document.querySelector('audio').addEventListener('ended', function(){ if (! document.querySelector('audio').seeking) load_song_from_index()}, false);
+		document.querySelector('#songlist_selector').addEventListener('change', load_selected_song, false);
+		document.querySelector('#skip').addEventListener('click', load_song_from_index, false);
+		document.querySelector('#mark_timestamp').addEventListener('click', mark_favorited_timestamp, false);
+		document.querySelector('#clear_timestamps').addEventListener('click', clear_timestamps, false);
+		document.querySelector('#player_source').addEventListener('error', function(err){ if (! document.querySelector('audio').seeking) load_song_from_index()}, false);
+		setup_media_session_action_handlers();
+		setup_gesture_handlers();
 	}
 	
 	/**
@@ -800,8 +864,8 @@
 		<button id="skip" hidden>⏭</button>
 		<button id="mark_timestamp" hidden>⭐</button>
 		<label id="screen_wake_lock_toggle" class="slider-toggle-switch" for="screen_wake_lock_switch" data-size="" style="--slider-ts-input-checked-content: 'Screen wake locked';--slider-ts-input-unchecked-content: 'Screen sleep allowed';--slider-ts-width: 150px;" hidden>
-			<input id="screen_wake_lock_switch" type="checkbox" />
-			<span class="slider_toggle"><span class="slider_switch"></span></span>
+			<input id="screen_wake_lock_switch" type="checkbox" hidden/>
+			<span class="slider_toggle" hidden><span class="slider_switch" hidden></span></span>
 		</label>
 	</div>
 	<div><audio controls autoplay id="player" hidden><source src="data:audio/ogg;base64,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GEMppJRSSimllFJKKaWUUkoppZRSSimllFJKKaWUUkgppZRSSimllFJKKaWUUkoppZRSSimllFJKKaWUUkoppZRSSimllFJKKaWUUkqppJRSSimllFJKKaWUUkoppZRSSimllFJKKaWUUkoppZRSSimllFJKKaWUUkoppZRSSimllFJKKaWUUkoppZRSSimllFJKKaWUUkoppZRSSimllFJKKaWUUkoppZRSSimllFJKKaWUUkoppZRSSimllFJKKaWUUkoppZRSSimllFJKKaWUUkoppZRSSimllFJKKaWUUkoppZRSSimllFJKKaWUUkoppZRSSimllFJKKaWUUkoppZRSSimllFJKKaWUUkoppZRSSimllFJKKaWUUkoppZRSSimllFJKKaWUUkoplVJKKaWUUkoppZRSSimllFJKKaWUUkoppZRSSimllFJKKaWUUkoppZRSSimllFJKKaWUUkoppZRSSimllFJKKaWUUkoppZRSSimllFJKKaWUUkoppZRSCgCQinAAkHowoQwUGrISAEgFAACMUUopxpyDEDHmGGPQSSgpYsw5xhyUklLlHIQQUmktt8o5CCGk1FJtmXNSWosx5hgz56SkFFvNOYdSUoux5ppr7qS0VmuuNedaWqs115xzzbm0FmuuOdecc8sx15xzzjnnGHPOOeecc84FAOA0OACAHtiwOsJJ0VhgoSErAYBUAAACGaUYc8456BBSjDnnHIQQIoUYc845CCFUjDnnHHQQQqgYc8w5CCGEkDnnHIQQQgghcw466CCEEEIHHYQQQgihlM5BCCGEEEooIYQQQgghhBA6CCGEEEIIIYQQQgghhFJKCCGEEEIJoZRQAABggQMAQIANqyOcFI0FFhqyEgAAAgCAHJagUs6EQY5Bjw1BylEzDUJMOdGZYk5qMxVTkDkQnXQSGWpB2V4yCwAAgCAAIMAEEBggKPhCCIgxAABBiMwQCYVVsMCgDBoc5gHAA0SERACQmKBIu7iALgNc0MVdB0IIQhCCWBxAAQk4OOGGJ97whBucoFNU6iAAAAAAAAwA4AEA4KAAIiKaq7C4wMjQ2ODo8AgAAAAAABYA+AAAOD6AiIjmKiwuMDI0Njg6PAIAAAAAAAAAAICAgAAAAAAAQAAAAICAT2dnUwAEAAAAAAAAAADwOoUqAgAAAJxxaEsBAQA=" type="audio/mp4" id="player_source"></audio></div>

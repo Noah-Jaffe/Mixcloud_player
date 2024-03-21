@@ -646,7 +646,7 @@
 	async function request_screen_wake_lock() {
 		try {
 			let waitlock = await navigator.wakeLock.request('screen');
-			wakeLock.addEventListener("release", async (event) => {
+			waitlock.addEventListener("release", async (event) => {
 				await release_screen_wake_lock(event);
 			});
 			//window.screen_wake_lock.release = release_screen_wake_lock;

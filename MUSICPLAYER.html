@@ -424,10 +424,11 @@
 		}
 	}
 
-	function setup_gesture_handlers() {
-		if (!("PointerEvent" in window)) {
-			write2log(`No PointerEvent in window, gesture controls will not be enabled!`,2);
-		}
+	/**
+	 * Enables a whole batch of events to be setup for gestures
+	 * @params args {name:string, step:string}[] array of objects with keys: 'name', and 'step'
+	 */
+	function enable_gesture_handler_group(args) {
 		var start = {};
 		var end = {};
 		var tracking = false;
@@ -477,11 +478,54 @@
 		handle_gesture_right = function()	{ write2log(`Gesture fired: RIGHT`, 1);	load_song_from_index(); }
 		handle_gesture_up = function()		{ write2log(`Gesture fired: UP`, 1);		document.querySelector('#shuffle_button').click(); }
 		handle_gesture_down = function()	{ write2log(`Gesture fired: DOWN`, 1);		load_song_from_index(); }
-		document.addEventListener('pointerdown', gestureStart, false);
-		document.addEventListener('pointermove', gestureMove, false);
-		document.addEventListener('pointerup', gestureEnd, false);
-		document.addEventListener('pointerleave', gestureEnd, false);
-		document.addEventListener('pointercancel', gestureEnd, false);
+
+		args.forEach(item=>{
+			item.step = item.step.toLowerCase();
+			if (item.step.endswith("start")) {
+				item.step = gestureStart;
+			} else if (item.step.endswith("end")) {
+				item.step = gestureEnd;
+			} else if (item.step.endswith("move")) {
+				item.step = gestureMove;
+			} else {
+				write2log(`bad formatting of args to enable_gesture_handler_group!`)
+				write2log(item);
+				return;
+			}
+			try {
+				document.addEventListener(item.name, item.step, false)
+			} catch {
+				write2log(`Failed to setup event: ${item.name}`);
+			}
+		});
+	}
+
+	/** 
+	 * Setup the touch events where possible.
+	 */
+	function setup_gesture_handlers() {
+		if ("PointerEvent" in window) {
+			enable_gesture_handler_group([
+				{ name: 'pointerdown',   step: 'start' },
+				{ name: 'pointermove',   step: 'move' },
+				{ name: 'pointerup',     step: 'end' },
+				{ name: 'pointerleave',  step: 'end' },
+				{ name: 'pointercancel', step: 'end' },
+			]);
+		} else {
+			write2log(`No PointerEvent in window, gesture controls via PointerEvents will not be enabled!`, 2);
+		}
+		if ('TouchEvent' in window || 'ontouchstart' in window || 'ontouchend' in document) {
+			enable_gesture_handler_group([
+				{ name: 'touchstart',  step: 'start' },
+				{ name: 'touchmove',   step: 'move' },
+				{ name: 'touchend',    step: 'end' },
+				{ name: 'touchcancel', step: 'end' },
+			]);
+		} else {
+			write2log(`No TouchEvent in window, gesture controls via TouchEvents will not be enabled!`, 2);
+		}
+		
 	}
 
 	/**

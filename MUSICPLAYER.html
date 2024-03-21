@@ -690,6 +690,11 @@
 			write2log(`Will try to reaquire screen wake lock when possible.`, 10);
 			document.addEventListener("visibilitychange", auto_retry_aquire_lock, { once: true });
 		}
+		try {
+			WakeLockSentinel.release();
+		} catch (e) {
+			write2log(e);
+		}
 	}
 
 	/**

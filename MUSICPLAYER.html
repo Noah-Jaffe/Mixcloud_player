@@ -638,7 +638,7 @@
 				await request_screen_wake_lock();
 			} else {
 				// toggle off
-				await release_screen_wake_lock({isTrusted:true});
+				await release_screen_wake_lock({isUserDisabled:true});
 			}
 		}
 	}
@@ -661,7 +661,7 @@
 	async function release_screen_wake_lock(event) {
 		write2log(`Screen wake lock has been released`, 60);
 		document.querySelector("#screen_wake_lock_switch").checked = false
-		if (!event?.isTrusted) {
+		if (!event?.isUserDisabled) {
 			// non user fired event
 			write2log(`should i try to get new lock?`);
 		} else {

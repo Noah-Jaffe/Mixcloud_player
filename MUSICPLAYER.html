@@ -481,11 +481,11 @@
 
 		args.forEach(item=>{
 			item.step = item.step.toLowerCase();
-			if (item.step.endswith("start")) {
+			if (item.step.endsWith("start")) {
 				item.step = gestureStart;
-			} else if (item.step.endswith("end")) {
+			} else if (item.step.endsWith("end")) {
 				item.step = gestureEnd;
-			} else if (item.step.endswith("move")) {
+			} else if (item.step.endsWith("move")) {
 				item.step = gestureMove;
 			} else {
 				write2log(`bad formatting of args to enable_gesture_handler_group!`)

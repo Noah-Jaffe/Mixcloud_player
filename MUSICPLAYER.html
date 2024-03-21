@@ -657,15 +657,22 @@
 			write2log(err, 60);
 		}
 	}
-
+	async function auto_retry_aquire_lock() {
+		if (document.visibilityState === "visible") {
+			try {
+				request_screen_wake_lock()
+			} catch {}
+		} else {
+			document.addEventListener("visibilitychange", auto_retry_aquire_lock, { once: true });
+		}
+	}
 	async function release_screen_wake_lock(event) {
 		write2log(`Screen wake lock has been released`, 60);
 		document.querySelector("#screen_wake_lock_switch").checked = false
 		if (!event?.isUserDisabled) {
 			// non user fired event
 			write2log(`should i try to get new lock?`);
-		} else {
-			write2log(`dont try to get new lock?`);
+			document.addEventListener("visibilitychange", auto_retry_aquire_lock, { once: true });
 		}
 	}
 

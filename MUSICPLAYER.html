@@ -327,7 +327,7 @@
 		var thresholdTime = 500;
 		var relativeScreenDistThreshold = 0.3 * (mobileCheck() ? 0.5 : 1);
 		// 15-30% of the visible diagonal of the screen. should work seamlessly for any device/viewport, where mobile device swipes are more sensitive. 
-		var thresholdDistance = ((window.visualViewport?.height ?? 1)^2 + (window.visualViewport?.width ?? 1)^2)^0.5 * relativeScreenDistThreshold;
+		var thresholdDistance = ((window.visualViewport?.height ?? 1)**2 + (window.visualViewport?.width ?? 1)**2)**0.5 * relativeScreenDistThreshold;
 		gestureStart = function(e) {
 			tracking = true;
 			/* Hack - would normally use e.timeStamp but it's whack in Fx/Android */

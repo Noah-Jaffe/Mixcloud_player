@@ -147,7 +147,6 @@ const PLAYLIST_SONGS = [
   {
     "name": "Frankie 3000: Avicii - Megamix 2019",
     "key": "Frankie 3000/Avicii - Megamix 2019",
-    "src": null
   },
   {
     "name": "Frankie 3000: Basement Jaxx - Back To The Past Redrum mix",
@@ -267,17 +266,14 @@ const PLAYLIST_SONGS = [
   {
     "name": "Frankie 3000: Bruno Mars Funk mix 2017",
     "key": "Frankie 3000/Bruno Mars Funk mix 2017",
-    "src": null
   },
   {
     "name": "Frankie 3000: Bruno Mars Megamix 2016",
     "key": "Frankie 3000/Bruno Mars Megamix 2016",
-    "src": null
   },
   {
     "name": "Frankie 3000: Calvin Harris - Megamix 2019",
     "key": "Frankie 3000/Calvin Harris - Megamix 2019",
-    "src": null
   },
   {
     "name": "Frankie 3000: Calvin Harris - The 2019 Re-Re-Remix",
@@ -312,7 +308,6 @@ const PLAYLIST_SONGS = [
   {
     "name": "Frankie 3000: Calvin Harris Megamix 2017",
     "key": "Frankie 3000/Calvin Harris Megamix 2017",
-    "src": null
   },
   {
     "name": "Frankie 3000: Calvin Harris Megamix 2018",
@@ -537,7 +532,6 @@ const PLAYLIST_SONGS = [
   {
     "name": "Frankie 3000: Ed Sheeran - Megamix 2019",
     "key": "Frankie 3000/Ed Sheeran - Megamix 2019",
-    "src": null
   },
   {
     "name": "Frankie 3000: Ed Sheeran - The Dance remix 2019",
@@ -547,7 +541,6 @@ const PLAYLIST_SONGS = [
   {
     "name": "Frankie 3000: Ed Sheeran Megamix 2017",
     "key": "Frankie 3000/Ed Sheeran Megamix 2017",
-    "src": null
   },
   {
     "name": "Frankie 3000: Eminem Megamix 2018",
@@ -652,17 +645,14 @@ const PLAYLIST_SONGS = [
   {
     "name": "Frankie 3000: Jax Jones - Megamix 2019",
     "key": "Frankie 3000/Jax Jones - Megamix 2019",
-    "src": null
   },
   {
     "name": "Frankie 3000: Jax Jones Vs. Sigala Vs. Jonas Blue",
     "key": "Frankie 3000/Jax Jones Vs. Sigala Vs. Jonas Blue",
-    "src": null
   },
   {
     "name": "Frankie 3000: Jess Glynne - Megamix 2019",
     "key": "Frankie 3000/Jess Glynne - Megamix 2019",
-    "src": null
   },
   {
     "name": "Frankie 3000: Joel Corry - Best of the Best",
@@ -672,12 +662,10 @@ const PLAYLIST_SONGS = [
   {
     "name": "Frankie 3000: Joel Corry - Hits & Mixes",
     "key": "Frankie 3000/Joel Corry - Hits & Mixes",
-    "src": null
   },
   {
     "name": "Frankie 3000: Jonas Blue - Megamix 2019",
     "key": "Frankie 3000/Jonas Blue - Megamix 2019",
-    "src": null
   },
   {
     "name": "Frankie 3000: Justin Bieber - The Fan mix",
@@ -732,7 +720,6 @@ const PLAYLIST_SONGS = [
   {
     "name": "Frankie 3000: Michael Jackson",
     "key": "Frankie 3000/Michael Jackson",
-    "src": null
   },
   {
     "name": "Frankie 3000: Michael Jackson - the Bad Thriller Off The Wall megamix",
@@ -747,7 +734,6 @@ const PLAYLIST_SONGS = [
   {
     "name": "Frankie 3000: New Order - The Greatest Hits mix",
     "key": "Frankie 3000/New Order - The Greatest Hits mix",
-    "src": null
   },
   {
     "name": "Frankie 3000: Old School Hip-Hop Classics 1",
@@ -802,7 +788,6 @@ const PLAYLIST_SONGS = [
   {
     "name": "Frankie 3000: Prince",
     "key": "Frankie 3000/Prince",
-    "src": null
   },
   {
     "name": "Frankie 3000: Purple Disco Machine - Megamix 2019",
@@ -887,12 +872,10 @@ const PLAYLIST_SONGS = [
   {
     "name": "Frankie 3000: Sigala - Megamix 2018",
     "key": "Frankie 3000/Sigala - Megamix 2018",
-    "src": null
   },
   {
     "name": "Frankie 3000: Sigala - Megamix 2019",
     "key": "Frankie 3000/Sigala - Megamix 2019",
-    "src": null
   },
   {
     "name": "Frankie 3000: Sigala - The Favorite Remix 2020",

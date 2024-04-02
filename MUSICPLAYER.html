@@ -224,18 +224,18 @@
 		}
 		document.title = "Loading next song...";
 		// now next_song is an int.
-		if (PLAYLIST_SONGS[next_song].src == undefined) {
-			do {
-				try {
-					PLAYLIST_SONGS[next_song].src = PLAYLIST_SONGS[next_song].src;
-				} catch (err) {
-					console.log(`Error while attempting to get src from song index #${next_song}, key = '${PLAYLIST_SONGS[next_song].key}', name = '${PLAYLIST_SONGS[next_song].name}', skipping to next index!`);
-					next_song++;
-				}
-			} while (PLAYLIST_SONGS[next_song].src == undefined)
-		} else {
-
+		let offset = 0;
+		while (PLAYLIST_SONGS[(next_song + offset) % PLAYLIST_SONGS.length].src == undefined && offset < PLAYLIST_SONGS.length) {
+			console.log(`Error while attempting to get src from song index #${next_song}, key = '${PLAYLIST_SONGS[next_song].key}', name = '${PLAYLIST_SONGS[next_song].name}', skipping to next index!`);
+			offset++;
 		}
+		if (offset == PLAYLIST_SONGS.length) {
+			write2log(`fatal error, no available song srcs!`);
+			return;
+		} else if (offset > 0) {
+			write2log(`Error while attempting to get src from song index #${next_song}, key = '${PLAYLIST_SONGS[next_song].key}', name = '${PLAYLIST_SONGS[next_song].name}', skipping to next available src ${offset} songs away!`,5);
+		}
+		next_song = (next_song + offset) % PLAYLIST_SONGS.length;
 
 		// now we have the src for this song... its ready to be loaded
 		await update_player_src(PLAYLIST_SONGS[next_song].src);

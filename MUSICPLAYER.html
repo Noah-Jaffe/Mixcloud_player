@@ -433,19 +433,21 @@
 		var end = {};
 		var tracking = false;
 		var thresholdTime = 500;
-		var thresholdDistance = 75;
+		var relativeScreenDistThreshold = 0.3 * (mobileCheck() ? 0.5 : 1);
+		// 15-30% of the visible diagonal of the screen. should work seamlessly for any device/viewport, where mobile device swipes are more sensitive. 
+		var thresholdDistance = ((window.visualViewport?.height ?? 1)**2 + (window.visualViewport?.width ?? 1)**2)**0.5 * relativeScreenDistThreshold;
 		gestureStart = function(e) {
 			tracking = true;
 			/* Hack - would normally use e.timeStamp but it's whack in Fx/Android */
 			start.t = new Date().getTime();
-			start.x = e.clientX;
-			start.y = e.clientY;
+			start.x = e.screenX;
+			start.y = e.screenY;
 		};
 		gestureMove = function(e) {
 			if (tracking) {
 				e.preventDefault();
-				end.x = e.clientX;
-				end.y = e.clientY;
+				end.x = e.screenX;
+				end.y = e.screenY;
 			}
 		}
 		gestureEnd = function(e) {
@@ -474,10 +476,10 @@
 				}
 			}
 		}
-		handle_gesture_left = function()	{ write2log(`Gesture fired: LEFT`, 1);		audio_element.currentTime = 0; }
-		handle_gesture_right = function()	{ write2log(`Gesture fired: RIGHT`, 1);	load_song_from_index(); }
-		handle_gesture_up = function()		{ write2log(`Gesture fired: UP`, 1);		document.querySelector('#shuffle_button').click(); }
-		handle_gesture_down = function()	{ write2log(`Gesture fired: DOWN`, 1);		load_song_from_index(); }
+		handle_gesture_left = 	function()	{ write2log(`Gesture fired: LEFT`, 1);		document.querySelector('audio').currentTime = 0; }
+		handle_gesture_right = 	function()	{ write2log(`Gesture fired: RIGHT`, 1);		load_song_from_index(); }
+		handle_gesture_up = 	function()	{ write2log(`Gesture fired: UP`, 1);		document.querySelector('#shuffle_button').click(); }
+		handle_gesture_down =	 function()	{ write2log(`Gesture fired: DOWN`, 1);		load_song_from_index(); }
 
 		args.forEach(item=>{
 			item.step = item.step.toLowerCase();

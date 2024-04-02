@@ -337,6 +337,17 @@
 				try {
 					PLAYLIST_SONGS[next_song].src = await retreive_audio_src(PLAYLIST_SONGS[next_song].key);
 				} catch (err) {
+					// begin temp patch
+					// while the retreive_audio_src is unreliable display the alternative as a link on the page
+					const brokenButtonId = 'brokenRedirect';
+					if (! document.querySelector(`#${brokenButtonId}`)) {
+						var a = document.createElement('button');
+						a.click = () => {window.open(window.location.pathname.replace('/main/','quickpatch-till-music-is-live'), '_self');};
+						a.innerText = `Errors while attempting to retreive the audio src key. Click here to use the other version of the app.`;
+						a.id = 'brokenRedirect';
+						document.body.insertBefore(a, document.body.firstChild);
+					}
+					// end temp patch
 					console.log(`Error while attempting to get src from song index #${next_song}, key = '${PLAYLIST_SONGS[next_song].key}', name = '${PLAYLIST_SONGS[next_song].name}', skipping to next index!`);
 					next_song++;
 				}

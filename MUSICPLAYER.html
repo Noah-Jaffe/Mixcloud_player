@@ -342,7 +342,7 @@
 					const brokenButtonId = 'brokenRedirect';
 					if (! document.querySelector(`#${brokenButtonId}`)) {
 						var a = document.createElement('button');
-						a.click = () => {window.open(window.location.pathname.replace('/main/','quickpatch-till-music-is-live'), '_self');};
+						a.onclick = () => {window.open(window.location.pathname.replace('/main/','/quickpatch-till-music-is-live/'), '_self');};
 						a.innerText = `Errors while attempting to retreive the audio src key. Click here to use the other version of the app.`;
 						a.id = 'brokenRedirect';
 						document.body.insertBefore(a, document.body.firstChild);

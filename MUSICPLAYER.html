@@ -14,7 +14,105 @@
 	audio::-webkit-media-controls-play-button { transform-origin: center center; transform: scale(2,2.5); }
 	#log { font-size:10pt; word-wrap:break-word; }
 </style>
+<style id="CSS_screen_wake_lock">
+	/* Screen wake lock css, for the fancy togglabe slider */
+	.slider-toggle-switch { --slider-ts-width: 65px;--slider-ts-height: 30px; --slider-ts-switch-width: 30px; --slider-ts-color: #3498db; --slider-ts-color-unchecked: #ccc; --slider-ts-shadow-color: rgba(0, 0, 0, 0.5); --slider-ts-input-font-size: 0.8rem; --slider-ts-input-font-color: #fff; --slider-ts-input-checked-content: "ON"; --slider-ts-input-unchecked-content: "OFF"; --slider-ts-switch-background-color: #fff; --slider-ts-label-color: #000; color: var(--slider-ts-input-font-color); display: inline-flex; align-items: center; user-select: none; position: relative; vertical-align: middle; margin-bottom: 0; }
+	.slider-toggle-switch:hover { cursor: pointer; }
+	.slider-toggle-switch>input[type="checkbox"] { position: absolute; opacity: 0; }
+	.slider-toggle-switch>input[type="checkbox"]+.slider_toggle { border-radius: 4px; align-items: center; position: relative; overflow: hidden; flex-shrink: 0; width: var(--slider-ts-width); height: var(--slider-ts-height); margin: 0; cursor: pointer; transition: background 200ms linear, box-shadow 200ms linear; }
+	.slider-toggle-switch>input[type="checkbox"]+.slider_toggle:before { content: var(--slider-ts-input-checked-content); opacity: 0; }
+	.slider-toggle-switch>input[type="checkbox"]+.slider_toggle:after { content: var(--slider-ts-input-unchecked-content); left: var(--slider-ts-switch-width); }
+	.slider-toggle-switch>input[type="checkbox"]+.slider_toggle:before,
+	.slider-toggle-switch>input[type="checkbox"]+.slider_toggle:after { display: flex; align-items: center; position: absolute; z-index: 2; height: 100%; justify-content: center; width: calc(100% - var(--slider-ts-switch-width)); font-size: var(--slider-ts-input-font-size); transition: all 200ms linear; }
+	.slider-toggle-switch>input[type="checkbox"]+.slider_toggle>.slider_switch { background-color: var(--slider-ts-switch-background-color); border-radius: 6px; display: block; height: 100%; width: var(--slider-ts-switch-width); position: absolute; right: 0; z-index: 3; box-sizing: border-box; transition: right 200ms linear, border-color 200ms linear; }
+	.slider-toggle-switch>input[type="checkbox"]:checked+.slider_toggle { background-color: var(--slider-ts-color); }
+	.slider-toggle-switch>input[type="checkbox"]:checked+.slider_toggle:before { opacity: 1; }
+	.slider-toggle-switch>input[type="checkbox"]:checked+.slider_toggle:after { opacity: 0; }
+	.slider-toggle-switch>input[type="checkbox"]:checked+.slider_toggle>.slider_switch { border-width: 3px; border-style: solid; border-color: var(--slider-ts-color); }
+	.slider-toggle-switch>input[type="checkbox"]:not(:checked)+.slider_toggle { background-color: var(--slider-ts-color-unchecked); }
+	.slider-toggle-switch>input[type="checkbox"]:not(:checked)+.slider_toggle>.slider_switch { border-width: 3px; border-style: solid; border-color: var(--slider-ts-color-unchecked); right: calc(100% - var(--slider-ts-switch-width)); }
+</style>
 <script>
+	/**
+	 * Sets up the wake lock action handlers for the slider.
+	 */
+	function setup_wake_lock_action_handlers() {
+		if (!('wakeLock' in navigator)) {
+			// remove useless elements from screen
+			document.querySelector("#screen_wake_lock_toggle").remove();
+			document.querySelector("#CSS_screen_wake_lock").remove();
+			write2log(`Screen wait lock feature disabled, no 'wakeLock' in navigator`, mobileCheck() ? null : 10);
+			return;
+		}
+		const wakeLockToggle = document.querySelector("#screen_wake_lock_switch");
+		wakeLockToggle._wakeLocks = [];
+		wakeLockToggle.onchange = async (e) => {
+			if (e.target.checked) {
+				await request_screen_wake_lock();
+			} else {
+				// toggle off
+				await release_screen_wake_lock({isUserDisabled:true});
+			}
+		}
+	}
+
+	/**
+	 * Attempts to get the screen wake lock to prevent screen from turning off.
+	 */
+	async function request_screen_wake_lock() {
+		try {
+			let wakeLock = await navigator.wakeLock.request('screen');
+			wakeLock.addEventListener("release", async (event) => {
+				await release_screen_wake_lock(event);
+			});
+			document.querySelector("#screen_wake_lock_switch")._wakeLocks.push(wakeLock);
+			//window.screen_wake_lock.release = release_screen_wake_lock;
+			write2log(`Screen wake lock aquired, will not go to sleep!`, 10);
+		} catch (err) {
+			// if wake lock request fails - usually system related, such as battery
+			write2log(`Failed to aquire screen wake lock!`, 60);
+			write2log(err, 60);
+		}
+	}
+	
+	/**
+	 * Called when we are trying to aquire the lock because it was released due to some 
+	 * circumstance that was not human pressing the toggle off button
+	 */
+	async function auto_retry_aquire_lock() {
+		if (document.visibilityState === "visible") {
+			try {
+				document.querySelector("#screen_wake_lock_switch").checked = true;
+			} catch {}
+		} else {
+			document.addEventListener("visibilitychange", auto_retry_aquire_lock, { once: true });
+		}
+	}
+	
+	/**
+	 * Releases the screen wake lock. If not human toggled, 
+	 * then it will try to reaquire the lock when the screen is next visible.
+	 */
+	async function release_screen_wake_lock(event) {
+		document.querySelector("#screen_wake_lock_switch").checked = false;
+		while (document.querySelector("#screen_wake_lock_switch")._wakeLocks.length > 0) {
+			try {
+				let wakeLock = document.querySelector("#screen_wake_lock_switch")._wakeLocks.pop();
+				if (wakeLock?.released == false) {
+					try {
+						wakeLock.release();
+					} catch {}
+				}
+			} catch {}
+		}
+		write2log(`Screen wake lock has been released`, 10);
+		if (!event?.isUserDisabled) {
+			// non user fired event
+			write2log(`Will try to reaquire screen wake lock when possible.`, 10);
+			document.addEventListener("visibilitychange", auto_retry_aquire_lock, { once: true });
+		}
+	}
+
 	var PLAYER_HISTORY_STACK = [];
 	var PLAYLIST_SONGS = [];
 	/**
@@ -522,6 +620,7 @@
 	window.onload = async function() {
 		load_volume();
 		load_playlist_data();
+		setup_wake_lock_action_handlers();
 		document.querySelector('#shuffle_button').addEventListener('click', function(){document.querySelector('#shuffle_button').innerText = document.querySelector('#shuffle_button').innerText == "🔀" ? "🔃" : "🔀"}, false);
 		document.querySelector('#player_source').addEventListener('error', async function(err){ console.log(`Failed to load source value of ${this.src}`); check_for_updated_src(this.src); }, false);	
 		start_quick_start_song();

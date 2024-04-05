@@ -3766,5 +3766,10 @@ const PLAYLIST_SONGS = [
     "name": "Scotty Fox: The Rhythm Of The Night",
     "key": "Scotty Fox/The Rhythm Of The Night",
     "src": "https://stream14.mixcloud.com/secure/c/m4a/64/d/5/3/b/bac1-8e87-4d6e-801e-a0e4b39e74cc.m4a?sig=GkrqC4pV2NY_r3fFZkv4Hw"
+  },
+  {
+    "name": "elcoutoDJ: SANTAPOLA",
+    "key": "/elcoutoDJ/santapola-specialsession-elcoutodj/",
+    "src": "https://stream17.mixcloud.com/secure/c/m4a/64/f/e/7/f/9580-999d-40d2-a722-0d5f2e49932f.m4a?sig=xE_Xb0u_f17wnWgIxcfbDQ"
   }
 ]

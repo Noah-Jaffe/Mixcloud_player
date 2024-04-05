@@ -1,5 +1,114 @@
 const PLAYLIST_SONGS = [
   {
+    "name": "Carlo Alberto: Electro mix vol. 1",
+    "key": "/chalbidj/electro-mix-vol-1/",
+    "src": "https://stream6.mixcloud.com/secure/c/m4a/64/b/3/5/b/57c5-a5d1-473f-b54d-949dff6e5434.m4a?sig=R-_F4l0rfSFMh20-7aQ5BA"
+  },
+  {
+    "name": "Carlo Alberto: HIS - House Italian Style vol. 1",
+    "key": "/chalbidj/his-house-italian-style-vol-1/",
+    "src": "https://stream14.mixcloud.com/secure/c/m4a/64/d/5/8/6/f650-d51a-469e-9a2c-30ee72e8754b.m4a?sig=4c9tFO6sVAqV01rJ_-gz6A"
+  },
+  {
+    "name": "Carlo Alberto: HIS - House Italian Style vol. 2",
+    "key": "/chalbidj/his-house-italian-style-vol-2/",
+    "src": "https://stream16.mixcloud.com/secure/c/m4a/64/f/b/0/3/85ee-5426-4d89-abc5-44310aa69ea2.m4a?sig=YBkpueiuqbhV9c4H5DRMmQ"
+  },
+  {
+    "name": "Carlo Alberto: HIS vol.4 - House Italian style vol.4",
+    "key": "/chalbidj/his-vol4-house-italian-style-vol4/",
+    "src": "https://stream16.mixcloud.com/secure/c/m4a/64/5/4/d/b/1ddc-bf66-43ac-9fd7-b1eac9a703c0.m4a?sig=PWMLFJbmweJecZJUz_XprA"
+  },
+  {
+    "name": "Carlo Alberto: House for passion, October, Episode 1",
+    "key": "/chalbidj/house-for-passion-vol1/",
+    "src": "https://stream13.mixcloud.com/secure/c/m4a/64/8/8/e/c/0864-59ed-464e-a975-f3911d5b7c0f.m4a?sig=T_2sade2_GRZPiU8wmFcwg"
+  },
+  {
+    "name": "Carlo Alberto: House Italian Style vol. 3",
+    "key": "/chalbidj/house-italian-style-vol-3/",
+    "src": "https://stream4.mixcloud.com/secure/c/m4a/64/4/3/4/3/a9fd-a53c-46ad-9914-25c046cc2203.m4a?sig=lSGkoNzge_k9k5yu8f3BVg"
+  },
+  {
+    "name": "Carlo Alberto: Italodance 90'-00' Essential mix",
+    "key": "/chalbidj/90-and-00-eurodance-essential-mix/",
+    "src": "https://stream1.mixcloud.com/secure/c/m4a/64/f/c/0/f/c917-2494-47bc-8159-0648b18ee547.m4a?sig=ebKhHxM4iYxe969yh_ybIA"
+  },
+  {
+    "name": "Carlo Alberto: Love is gone vs Shining star Mashup",
+    "key": "/chalbidj/love-is-gone-vs-shining-star-pornocult-mashup/"
+  },
+  {
+    "name": "Carlo Alberto: My Vibes #01",
+    "key": "/chalbidj/winter-compilation-2015/",
+    "src": "https://stream8.mixcloud.com/secure/c/m4a/64/c/c/6/e/3e81-aeac-4126-aa06-150c27e5a677.m4a?sig=NVPvE1unStjdans1HSmRHQ"
+  },
+  {
+    "name": "Carlo Alberto: My Vibes #02",
+    "key": "/chalbidj/spring-compilation-2016/",
+    "src": "https://stream16.mixcloud.com/secure/c/m4a/64/3/9/9/8/384a-c76e-4f7d-a606-ff235f0903b5.m4a?sig=EGnbxx8mXA6IgHTwCTqXgA"
+  },
+  {
+    "name": "Carlo Alberto: My Vibes #03",
+    "key": "/chalbidj/summer-compilation-2016/",
+    "src": "https://stream18.mixcloud.com/secure/c/m4a/64/b/0/c/b/2358-c79e-4224-8768-c34906f1be93.m4a?sig=LZu63Rlc87Mug1oo6FhOoA"
+  },
+  {
+    "name": "Carlo Alberto: My Vibes #04 - Mix one",
+    "key": "/chalbidj/chalbi-winter-2k17-selection-10th-anniversary-edition-cd1/",
+    "src": "https://stream6.mixcloud.com/secure/c/m4a/64/1/0/6/b/34b6-d21b-463b-90f1-d04b6fd01e16.m4a?sig=v_-_kah9bNFFtrrwmNxxgg"
+  },
+  {
+    "name": "Carlo Alberto: My Vibes #04 - Mix two HIS House Italian Style - Special Edition",
+    "key": "/chalbidj/chalbi-winter-10th-a-edition-cd-two-his-house-italian-style/",
+    "src": "https://stream12.mixcloud.com/secure/c/m4a/64/e/3/f/8/f87a-7685-4d39-a06d-8430cba9a534.m4a?sig=oxSLX2w7HKb3RcEIZ9G3TA"
+  },
+  {
+    "name": "Carlo Alberto: My Vibes #05 - Mix one",
+    "key": "/chalbidj/chalbi-spring-2017-selection-cd-one-in-da-house/",
+    "src": "https://stream12.mixcloud.com/secure/c/m4a/64/1/7/4/7/286f-c813-4249-9288-0c78cf85955f.m4a?sig=CN3j7HCt3WA0AfFZsIxxAw"
+  },
+  {
+    "name": "Carlo Alberto: My Vibes #05 - Mix two",
+    "key": "/chalbidj/spring-2017-selection-cd-two-feel-the-dance/",
+    "src": "https://stream14.mixcloud.com/secure/c/m4a/64/1/5/e/8/a32d-1cfd-4e2d-94ff-a133958d7f34.m4a?sig=OyRu51r56C69NUKw8M5Jrw"
+  },
+  {
+    "name": "Carlo Alberto: My Vibes #06 - Mix one",
+    "key": "/chalbidj/chalbi-midsummer-2017-mix-one-feel-the-dance/",
+    "src": "https://stream3.mixcloud.com/secure/c/m4a/64/9/8/0/3/da3e-de27-4abb-8459-bf3d51f83a6e.m4a?sig=tL2ZIdZdaXhYDi3OUQACLA"
+  },
+  {
+    "name": "Carlo Alberto: My Vibes #06 - Mix two",
+    "key": "/chalbidj/chalbi-dj-midsummer-2017-mix-two-feel-the-house/",
+    "src": "https://stream2.mixcloud.com/secure/c/m4a/64/0/d/f/3/9d01-217d-456c-92a5-6e2a00734827.m4a?sig=xZkCDx_WPVioYh5IiJD-bA"
+  },
+  {
+    "name": "Carlo Alberto: MyVibes #07 ",
+    "key": "/chalbidj/myvibes-07/",
+    "src": "https://stream16.mixcloud.com/secure/c/m4a/64/5/e/2/0/ca51-f785-4da6-942a-c65252504e9d.m4a?sig=S-7wv9k---oQLNjWj1b4KA"
+  },
+  {
+    "name": "Carlo Alberto: MyVibes #08",
+    "key": "/chalbidj/myvibes-08/",
+    "src": "https://stream4.mixcloud.com/secure/c/m4a/64/0/d/2/2/08c2-ab96-4b53-8b00-60b95bdccbf3.m4a?sig=0lUTV7UDoo4dyRZs3U00Uw"
+  },
+  {
+    "name": "Carlo Alberto: Sésion Lounge n.1",
+    "key": "/chalbidj/lounge-bar-vol1/",
+    "src": "https://stream1.mixcloud.com/secure/c/m4a/64/d/1/4/6/51fa-8ac1-4be2-87d5-8356e9e97530.m4a?sig=By-mGFEfH-IjfsEm6joizg"
+  },
+  {
+    "name": "DjJEM2: 1069 latin julio mix 72023",
+    "key": "/DjJEM2/djjem-1069-latin-julio-mix-72023/",
+    "src": "https://stream18.mixcloud.com/secure/c/m4a/64/e/8/c/1/c4bf-5cd4-44c1-80b4-70254a0852ae.m4a?sig=9tMY_NU48MZIz-QowJfcaA"
+  },
+  {
+    "name": "Elcouto: SANTAPOLA SPECIALSESSION ELCOUTODJ",
+    "key": "/elcoutoDJ/santapola-specialsession-elcoutodj/",
+    "src": "https://stream18.mixcloud.com/secure/c/m4a/64/f/e/7/f/9580-999d-40d2-a722-0d5f2e49932f.m4a?sig=xE_Xb0u_f17wnWgIxcfbDQ"
+  },
+  {
     "name": "DJ Mighty: Liquid DnB Mix - Vol 61 - Killing Time",
     "key": "DJ Mighty/Liquid DnB Mix - Vol 61 - Killing Time",
     "src": "https://stream1.mixcloud.com/secure/c/m4a/64/5/e/5/8/a23e-6a64-44cc-ac1f-8a56b8c5d01f.m4a?sig=ZZhpCPmrQ5QgUkfuTnbkog"
@@ -3766,10 +3875,5 @@ const PLAYLIST_SONGS = [
     "name": "Scotty Fox: The Rhythm Of The Night",
     "key": "Scotty Fox/The Rhythm Of The Night",
     "src": "https://stream14.mixcloud.com/secure/c/m4a/64/d/5/3/b/bac1-8e87-4d6e-801e-a0e4b39e74cc.m4a?sig=GkrqC4pV2NY_r3fFZkv4Hw"
-  },
-  {
-    "name": "elcoutoDJ: SANTAPOLA",
-    "key": "/elcoutoDJ/santapola-specialsession-elcoutodj/",
-    "src": "https://stream17.mixcloud.com/secure/c/m4a/64/f/e/7/f/9580-999d-40d2-a722-0d5f2e49932f.m4a?sig=xE_Xb0u_f17wnWgIxcfbDQ"
   }
 ]

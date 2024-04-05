@@ -6,6 +6,9 @@ var CUSTOM_PLAYLISTS_TO_LOAD = [
 	{mixcloud_search_key:"Lys_InTheMix", mixcloud_match_regex:/^lys_$/gmi, name_to_replace:/lys[_-]{1,2}|^(?!.*?lys[_-]{1,2})/gmi, name_replace_with:"Lys: "},
 	{mixcloud_search_key:"Frankie%203000", mixcloud_match_regex:/^FrankAndreasen$/gmi, name_to_replace:/^/gmi, name_replace_with:"Frankie 3000: "},
 	{mixcloud_search_key:"djfrankiespodcast", mixcloud_match_regex:/^djfrankiespodcast$/gmi, name_to_replace:/^/gmi, name_replace_with:"Frankie 3000 pod: "},
+	{mixcloud_search_key:"chalbidj", mixcloud_match_regex:/^chalbidj/gmi, name_to_replace:/^chalbidj/gmi, name_replace_with:"Carlo Alberto: "},
+	{mixcloud_search_key:"elcoutoDJ", mixcloud_match_regex:/^elcoutoDJ/gmi, name_to_replace:/^elcoutoDJ/gmi, name_replace_with:"Elcouto: "},
+		
 ];
 var INDIVIDUAL_TRACKS_TO_LOAD = [
 	// { name : <DISPLAY NAME>, key : <MIXCLOUD KEY> }
@@ -19,7 +22,6 @@ var INDIVIDUAL_TRACKS_TO_LOAD = [
 	{name:'Scotty fox: occupational therapy', key:'/scotty-fox/occupational-therapy/'},
 	{name:'Scotty fox: the rhythm of the night',key:'/scotty-fox/the-rhythm-of-the-night/'},
 	{name:'DjJEM2: 1069 latin julio mix 72023', key:'/DjJEM2/djjem-1069-latin-julio-mix-72023/'},
-	{name:"elcoutoDJ: SANTAPOLA",key:"/elcoutoDJ/santapola-specialsession-elcoutodj/"},
 ];
 var BAN_LIST = [
 	// BAN BY MIXCLOUD KEY or MIXCLOUD DISPLAY NAME

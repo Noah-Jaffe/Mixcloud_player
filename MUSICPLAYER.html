@@ -364,6 +364,14 @@
 			++i;
 		}
 	}
+
+	/**
+ 	 * Actition event for the Fast forward feature. Will fast forward by the greater of the following values: 5% of the song length, or 1 minute.
+   	 */
+	async function fastforward() {
+		const audio = document.querySelector('#player');
+		audio.currentTime += Math.min(audio.duration * 0.05, 60);
+	}
 	
 	/**
 	 * PREREQ: update_playlist_songs has been run
@@ -631,6 +639,7 @@
 		document.querySelector('audio').addEventListener('ended', function(){ if (! document.querySelector('audio').seeking) load_song_from_index()}, false);
 		document.querySelector('#songlist_selector').addEventListener('change', load_selected_song, false);
 		document.querySelector('#skip').addEventListener('click', load_song_from_index, false);
+		document.querySelector('#fastforward').addEventListener('click', fastforward, false);
 		document.querySelector('#mark_timestamp').addEventListener('click', mark_favorited_timestamp, false);
 		document.querySelector('#clear_timestamps').addEventListener('click', clear_timestamps, false);
 		document.querySelector('#player_source').addEventListener('error', function(err){ if (! document.querySelector('audio').seeking) load_song_from_index()}, false);
@@ -673,6 +682,7 @@
 	<div>
 		<button id="shuffle_button" hidden>🔀</button>
 		<button id="skip" hidden>⏭</button>
+		<button id="fastforward" hidden>⏩</button>
 		<button id="mark_timestamp" hidden>⭐</button>
 		<label id="screen_wake_lock_toggle" class="slider-toggle-switch" for="screen_wake_lock_switch" data-size="" style="--slider-ts-input-checked-content: 'Screen wake locked';--slider-ts-input-unchecked-content: 'Screen sleep allowed';--slider-ts-width: 150px;" hidden>
 			<input id="screen_wake_lock_switch" type="checkbox" hidden/>

@@ -19,6 +19,7 @@ var INDIVIDUAL_TRACKS_TO_LOAD = [
 	{name:'Scotty fox: occupational therapy', key:'/scotty-fox/occupational-therapy/'},
 	{name:'Scotty fox: the rhythm of the night',key:'/scotty-fox/the-rhythm-of-the-night/'},
 	{name:'DjJEM2: 1069 latin julio mix 72023', key:'/DjJEM2/djjem-1069-latin-julio-mix-72023/'},
+	{name:"elcoutoDJ: SANTAPOLA",key:"/elcoutoDJ/santapola-specialsession-elcoutodj/"},
 ];
 var BAN_LIST = [
 	// BAN BY MIXCLOUD KEY or MIXCLOUD DISPLAY NAME

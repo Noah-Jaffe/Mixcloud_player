@@ -19,6 +19,10 @@ var INDIVIDUAL_TRACKS_TO_LOAD = [
 	{name:'Scotty fox: occupational therapy', key:'/scotty-fox/occupational-therapy/'},
 	{name:'Scotty fox: the rhythm of the night',key:'/scotty-fox/the-rhythm-of-the-night/'},
 	{name:'DjJEM2: 1069 latin julio mix 72023', key:'/DjJEM2/djjem-1069-latin-julio-mix-72023/'},
+	{name:"[trial] DJ KenB Kenya: Pop & Rock - EDM Remixes", src:"https://stream18.mixcloud.com/secure/c/m4a/64/7/8/3/b/aec4-8810-44cc-95bd-0eea8a8b18e6.m4a?sig=OJ73ylA0RFc0IfvTJ0ddwg"},
+	{name:"[trial] hatahatahata: 2010'S POP, EDM, ROCK, R&B THROW BACK BEST MEGAMIX", src:"https://stream1.mixcloud.com/secure/c/m4a/64/3/1/0/a/ad34-58bc-40f0-87f3-5ff68bc6001e.m4a?sig=axcsRrTh6IvGiqwf8VmKyw"},
+	{name:"[trial] Deejay Ortis: Best of Rihanna Mix, Rnb, Pop, Rock, EDM & Techno By Deejay Ortis", src:"https://stream1.mixcloud.com/secure/c/m4a/64/5/5/2/8/bb08-70fa-40c9-809a-5db3882a344d.m4a?sig=GecaNEdvCgwMYS3_Rrth4w"},
+	{name:"[trial] djstatt: 4th of July Rock, EDM, Latin...", src:"https://stream9.mixcloud.com/secure/c/m4a/64/f/d/3/d/453c-4bc2-4a43-b5e1-165f40156de8.m4a?sig=vtZ-gEPtWFX8v1I7n8YoYA"},
 ];
 var BAN_LIST = [
 	// BAN BY MIXCLOUD KEY or MIXCLOUD DISPLAY NAME

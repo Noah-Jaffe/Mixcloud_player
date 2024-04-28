@@ -3875,5 +3875,9 @@ const PLAYLIST_SONGS = [
     "name": "Scotty Fox: The Rhythm Of The Night",
     "key": "Scotty Fox/The Rhythm Of The Night",
     "src": "https://stream14.mixcloud.com/secure/c/m4a/64/d/5/3/b/bac1-8e87-4d6e-801e-a0e4b39e74cc.m4a?sig=GkrqC4pV2NY_r3fFZkv4Hw"
-  }
+  },
+  {"name":"[trial] DJ KenB Kenya: Pop & Rock - EDM Remixes", "key":"trial/1", "src":"https://stream18.mixcloud.com/secure/c/m4a/64/7/8/3/b/aec4-8810-44cc-95bd-0eea8a8b18e6.m4a?sig=OJ73ylA0RFc0IfvTJ0ddwg"},
+	{"name":"[trial] hatahatahata: 2010'S POP, EDM, ROCK, R&B THROW BACK BEST MEGAMIX", "key":"trial/2",  "src":"https://stream1.mixcloud.com/secure/c/m4a/64/3/1/0/a/ad34-58bc-40f0-87f3-5ff68bc6001e.m4a?sig=axcsRrTh6IvGiqwf8VmKyw"},
+	{"name":"[trial] Deejay Ortis: Best of Rihanna Mix, Rnb, Pop, Rock, EDM & Techno By Deejay Ortis", "key":"trial/3",  "src":"https://stream1.mixcloud.com/secure/c/m4a/64/5/5/2/8/bb08-70fa-40c9-809a-5db3882a344d.m4a?sig=GecaNEdvCgwMYS3_Rrth4w"},
+	{"name":"[trial] djstatt: 4th of July Rock, EDM, Latin...", "key":"trial/4", "src":"https://stream9.mixcloud.com/secure/c/m4a/64/f/d/3/d/453c-4bc2-4a43-b5e1-165f40156de8.m4a?sig=vtZ-gEPtWFX8v1I7n8YoYA"},
 ]

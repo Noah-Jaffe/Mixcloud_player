@@ -3822,6 +3822,46 @@ const PLAYLIST_SONGS = [
     "src": "https://stream3.mixcloud.com/secure/c/m4a/64/7/a/5/6/3863-5a92-40e5-a2c2-62446dbe5648.m4a?sig=CK0HmbqR9n1C5RDgCkegig"
   },
   {
+    "name": "RONS: Podcast #761",
+    "key": "RONS/Podcast #761",
+    "src": "https://stream2.mixcloud.com/secure/c/m4a/64/c/d/e/a/38b3-e1bd-4c4e-b504-cf5e8d92f53f.m4a?sig=_reAsep0Qd2l9nBu53lwXA"
+  },
+  {
+    "name": "RONS: Podcast #762",
+    "key": "RONS/Podcast #762",
+    "src": "https://stream7.mixcloud.com/secure/c/m4a/64/6/e/7/9/761e-8997-4e25-937e-5c0e1882162c.m4a?sig=bC_ruhUjoFTmdGVYIPm7nQ"
+  },
+  {
+    "name": "RONS: Podcast #763",
+    "key": "RONS/Podcast #763",
+    "src": "https://stream2.mixcloud.com/secure/c/m4a/64/6/7/d/d/d672-b408-402e-8e45-8873adbb139c.m4a?sig=y8gP1Tsg6Dz7ayw1nPFXNw"
+  },
+  {
+    "name": "RONS: Podcast #764",
+    "key": "RONS/Podcast #764",
+    "src": "https://stream12.mixcloud.com/secure/c/m4a/64/2/1/7/6/5c72-6675-4a35-ad6c-f93bd189a432.m4a?sig=0252UUEngzweHCR9b1ILvA"
+  },
+  {
+    "name": "RONS: Podcast #765",
+    "key": "RONS/Podcast #765",
+    "src": "https://stream1.mixcloud.com/secure/c/m4a/64/d/9/4/d/bf36-0d14-448b-a3df-136b1399ae50.m4a?sig=pzvFJz2HSjZhVcpzDlFHbQ"
+  },
+  {
+    "name": "RONS: Podcast #766",
+    "key": "RONS/Podcast #766",
+    "src": "https://stream8.mixcloud.com/secure/c/m4a/64/7/f/0/4/adbd-55e7-49b1-81ee-5dcb9670b85d.m4a?sig=a3QrwC6zKIY09u3k1FDPag"
+  },
+  {
+    "name": "RONS: Podcast #767",
+    "key": "RONS/Podcast #767",
+    "src": "https://stream11.mixcloud.com/secure/c/m4a/64/6/2/1/9/765c-c4cb-40cd-bd72-9d29c6683418.m4a?sig=IqmP4P3HifgavmFrYeJEYw"
+  },
+  {
+    "name": "RONS: Podcast #768",
+    "key": "RONS/Podcast #768",
+    "src": "https://stream13.mixcloud.com/secure/c/m4a/64/f/1/b/7/0020-19a2-481b-a737-1d65a3c02089.m4a?sig=NsuNWiXySfpJgudiKfrMEw"
+  },
+  {
     "name": "RONS: Podcast #77 - Frist Friday Preview - Studio 54 Part 1 - No Talk",
     "key": "RONS/Podcast #77 - Frist Friday Preview - Studio 54 Part 1 - No Talk",
     "src": "https://streams.podomatic.com/vod/UDS13/e9/43/cb/djron91/media/published/4759530.mp3"
@@ -3875,9 +3915,5 @@ const PLAYLIST_SONGS = [
     "name": "Scotty Fox: The Rhythm Of The Night",
     "key": "Scotty Fox/The Rhythm Of The Night",
     "src": "https://stream14.mixcloud.com/secure/c/m4a/64/d/5/3/b/bac1-8e87-4d6e-801e-a0e4b39e74cc.m4a?sig=GkrqC4pV2NY_r3fFZkv4Hw"
-  },
-  {"name":"[trial] DJ KenB Kenya: Pop & Rock - EDM Remixes", "key":"trial/1", "src":"https://stream18.mixcloud.com/secure/c/m4a/64/7/8/3/b/aec4-8810-44cc-95bd-0eea8a8b18e6.m4a?sig=OJ73ylA0RFc0IfvTJ0ddwg"},
-	{"name":"[trial] hatahatahata: 2010'S POP, EDM, ROCK, R&B THROW BACK BEST MEGAMIX", "key":"trial/2",  "src":"https://stream1.mixcloud.com/secure/c/m4a/64/3/1/0/a/ad34-58bc-40f0-87f3-5ff68bc6001e.m4a?sig=axcsRrTh6IvGiqwf8VmKyw"},
-	{"name":"[trial] Deejay Ortis: Best of Rihanna Mix, Rnb, Pop, Rock, EDM & Techno By Deejay Ortis", "key":"trial/3",  "src":"https://stream1.mixcloud.com/secure/c/m4a/64/5/5/2/8/bb08-70fa-40c9-809a-5db3882a344d.m4a?sig=GecaNEdvCgwMYS3_Rrth4w"},
-	{"name":"[trial] djstatt: 4th of July Rock, EDM, Latin...", "key":"trial/4", "src":"https://stream9.mixcloud.com/secure/c/m4a/64/f/d/3/d/453c-4bc2-4a43-b5e1-165f40156de8.m4a?sig=vtZ-gEPtWFX8v1I7n8YoYA"},
+  }
 ]

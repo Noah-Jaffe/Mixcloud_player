@@ -772,13 +772,28 @@
 </script>
 </head>
 <body>
+	<p>
+		Welcome to demo mode. There are no instructions in the deployed version as this is meant to be as lightweight as possible. Press the ▶️ button to start.
+		<br>
+		This was designed to be used in a nearly hands-free manner and deployed to any system that can load a webpage. (This works on mobile devices and is compatible with bluetooth controls).
+		<br>
+		The music playlist was chosen at random.
+		<br>
+		🔀|🔃 - shuffle playlist order - random | sequential
+		<br>
+		⏭️ - next playlist
+		<br>
+		⏩ - fast forward 5% or 5 minutes
+		<br>
+		⭐ - favorite timestamp
+	</p>
 	<button id="PLAY" onclick="let x=document.querySelector('audio');document.querySelectorAll('[hidden]').forEach(e=>e.hidden=false);x.muted=true;x.muted=false;x.volume=mobileCheck()?1:(x.volume?x.volume : 1);x.play();document.querySelector('#PLAY').remove()">▶️</button>
 	<div hidden>
 		<select id="songlist_selector"><option>Loading...</option></select>
 	</div>
 	<div>
 		<button id="shuffle_button" hidden>🔀</button>
-		<button id="skip" hidden class="bigbutton">⏭</button>
+		<button id="skip" hidden class="bigbutton">⏭️</button>
 		<button id="fastforward" hidden>⏩</button>
 		<button id="mark_timestamp" hidden>⭐</button>
 		<label id="screen_wake_lock_toggle" class="slider-toggle-switch" for="screen_wake_lock_switch" data-size="" style="--slider-ts-input-checked-content: 'Screen wake locked';--slider-ts-input-unchecked-content: 'Screen sleep allowed';--slider-ts-width: 150px;" hidden>
@@ -798,5 +813,6 @@
 		<thead id="log_table_header"><tr><th>timestamp</th><th>message</th></tr></thead>
 		<tbody id="log_table_body"></tbody>
 	</table>
+	<small>Welcome to demo mode. There are no instructions in the deployed version as this is meant to be as lightweight as possible. The music playlist was chosen at random.</small>
 </body>
 </html>

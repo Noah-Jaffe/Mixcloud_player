@@ -774,10 +774,13 @@
 		document.querySelector('#mark_timestamp').addEventListener('click', mark_favorited_timestamp, false);
 		document.querySelector('#clear_timestamps').addEventListener('click', clear_timestamps, false);
 		document.querySelector('#player_source').addEventListener('error', async function(err){ 
-			// if not playing in 2.5s, then try to load a new track.
+			// if we don't start playing in the next 2 sec, then try another track.
 			await new Promise(r => setTimeout(r, 2000));
-			if ((! document.querySelector('audio').seeking) && !( audio.currentTime > 0 && !audio.paused && !audio.ended && audio.readyState > audio.HAVE_CURRENT_DATA))
+			if ((! document.querySelector('audio').seeking) && !( audio.currentTime > 0 && !audio.paused && !audio.ended && audio.readyState > audio.HAVE_CURRENT_DATA)) {
+				write2log(err);
+				write2log("Audio source error, skipping to next track!")
 				load_song_from_index();
+			}
 		}, false);
 		setup_media_session_action_handlers();
 		setup_gesture_handlers();

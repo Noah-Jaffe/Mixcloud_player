@@ -776,7 +776,7 @@
 		document.querySelector('#player_source').addEventListener('error', async function(err){ 
 			// if we don't start playing in the next 2 sec, then try another track.
 			await new Promise(r => setTimeout(r, 2000));
-			if ((! document.querySelector('audio').seeking) && !( audio.currentTime > 0 && !audio.paused && !audio.ended && audio.readyState > audio.HAVE_CURRENT_DATA)) {
+			if ((! document.querySelector('audio').seeking) ) {
 				write2log(err);
 				write2log("Audio source error, skipping to next track!")
 				load_song_from_index();

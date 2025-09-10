@@ -457,7 +457,7 @@
 	 * If successfully played, will update the persistent LAST_SONG_SRC value so that you can quick start playing next time the musicplayer is open.
 	 * @param src <str> the audio source string (url) to be played
 	 */
-	async function update_player_src(src) {
+	async function update_player_src_old(src) {
 		if (src == null) {return;}
 		var audio = document.querySelector('audio');
 		var source = document.querySelector('#player_source');
@@ -476,7 +476,71 @@
 		}catch(err){}
 	}
 
-	
+	async function update_player_src(src) {
+	if (!src) return;
+	const audio = document.querySelector('#player');
+
+	// Revoke previous blob URL if applicable
+	if (audio.src?.startsWith("blob:")) {
+		URL.revokeObjectURL(audio.src);
+	}
+
+	const mediaSource = new MediaSource();
+	audio.src = URL.createObjectURL(mediaSource);
+
+	mediaSource.addEventListener('sourceopen', async () => {
+		const mimeCodec = 'audio/mp4; codecs="mp4a.40.2"';
+		if (!MediaSource.isTypeSupported(mimeCodec)) {
+			write2log(`MIME type not supported: ${mimeCodec}`);
+			return;
+		}
+
+		const sourceBuffer = mediaSource.addSourceBuffer(mimeCodec);
+
+		try {
+			const proxiedUrl = 'https://corsproxy.io/?' + encodeURIComponent(src);
+			const response = await fetch(proxiedUrl);
+			if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+			const reader = response.body.getReader();
+
+			let updating = false;
+			let done = false;
+
+			const queue = [];
+
+			sourceBuffer.addEventListener('updateend', () => {
+				if (queue.length > 0 && !sourceBuffer.updating) {
+					sourceBuffer.appendBuffer(queue.shift());
+				} else if (done && !sourceBuffer.updating) {
+					mediaSource.endOfStream();
+				}
+			});
+
+			while (true) {
+				const { value, done: readerDone } = await reader.read();
+				if (readerDone) {
+					done = true;
+					if (!sourceBuffer.updating && queue.length === 0) {
+						mediaSource.endOfStream();
+					}
+					break;
+				}
+				if (sourceBuffer.updating || queue.length > 0) {
+					queue.push(value);
+				} else {
+					sourceBuffer.appendBuffer(value);
+				}
+			}
+
+			audio.play().catch(err => write2log("Autoplay blocked or failed: " + err));
+			audio.muted = false;
+			update_persistent('LAST_SONG_SRC', src, 0);
+		} catch (err) {
+			write2log(`Streaming error: ${err}`);
+		}
+	});
+}
+
 	/**
 	 * Updates the dropdown UI to display all of the available songs in PLAYLIST_SONGS. 
 	 * Will sort the PLAYLIST_SONGS.
@@ -773,15 +837,20 @@
 		document.querySelector('#fastforward').addEventListener('click', fastforward, false);
 		document.querySelector('#mark_timestamp').addEventListener('click', mark_favorited_timestamp, false);
 		document.querySelector('#clear_timestamps').addEventListener('click', clear_timestamps, false);
-		document.querySelector('#player_source').addEventListener('error', async function(err){ 
-			// if we don't start playing in the next 2 sec, then try another track.
-			await new Promise(r => setTimeout(r, 2000));
-			if ((! document.querySelector('audio').seeking) ) {
-				write2log(err);
-				write2log("Audio source error, skipping to next track!")
-				load_song_from_index();
-			}
-		}, false);
+		// document.querySelector('#player_source').addEventListener('error', async function(err){ 
+		// 	// if we don't start playing in the next 2 sec, then try another track.
+		// 	await new Promise(r => setTimeout(r, 2000));
+		// 	if ((! document.querySelector('audio').seeking) ) {
+		// 		write2log(err);
+		// 		write2log("Audio source error, skipping to next track!")
+		// 		load_song_from_index();
+		// 	}
+		// }, false);
+		document.querySelector('audio').addEventListener('play', () => write2log("🎵 Playback started"));
+		document.querySelector('audio').addEventListener('pause', () => write2log("⏸️ Paused"));
+		document.querySelector('audio').addEventListener('error', (e) => write2log("❌ Audio error: " + audio.error?.message));
+		document.querySelector('audio').addEventListener('ended', () => write2log("🏁 Track ended"));
+
 		setup_media_session_action_handlers();
 		setup_gesture_handlers();
 	}
@@ -826,7 +895,7 @@
 			<span class="slider_toggle" hidden><span class="slider_switch" hidden></span></span>
 		</label>
 	</div>
-	<div><audio controls autoplay id="player" hidden><source src="data:audio/ogg;base64,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GEMppJRSSimllFJKKaWUUkoppZRSSimllFJKKaWUUkgppZRSSimllFJKKaWUUkoppZRSSimllFJKKaWUUkoppZRSSimllFJKKaWUUkqppJRSSimllFJKKaWUUkoppZRSSimllFJKKaWUUkoppZRSSimllFJKKaWUUkoppZRSSimllFJKKaWUUkoppZRSSimllFJKKaWUUkoppZRSSimllFJKKaWUUkoppZRSSimllFJKKaWUUkoppZRSSimllFJKKaWUUkoppZRSSimllFJKKaWUUkoppZRSSimllFJKKaWUUkoppZRSSimllFJKKaWUUkoppZRSSimllFJKKaWUUkoppZRSSimllFJKKaWUUkoppZRSSimllFJKKaWUUkoppZRSSimllFJKKaWUUkoplVJKKaWUUkoppZRSSimllFJKKaWUUkoppZRSSimllFJKKaWUUkoppZRSSimllFJKKaWUUkoppZRSSimllFJKKaWUUkoppZRSSimllFJKKaWUUkoppZRSCgCQinAAkHowoQwUGrISAEgFAACMUUopxpyDEDHmGGPQSSgpYsw5xhyUklLlHIQQUmktt8o5CCGk1FJtmXNSWosx5hgz56SkFFvNOYdSUoux5ppr7qS0VmuuNedaWqs115xzzbm0FmuuOdecc8sx15xzzjnnGHPOOeecc84FAOA0OACAHtiwOsJJ0VhgoSErAYBUAAACGaUYc8456BBSjDnnHIQQIoUYc845CCFUjDnnHHQQQqgYc8w5CCGEkDnnHIQQQgghcw466CCEEEIHHYQQQgihlM5BCCGEEEooIYQQQgghhBA6CCGEEEIIIYQQQgghhFJKCCGEEEIJoZRQAABggQMAQIANqyOcFI0FFhqyEgAAAgCAHJagUs6EQY5Bjw1BylEzDUJMOdGZYk5qMxVTkDkQnXQSGWpB2V4yCwAAgCAAIMAEEBggKPhCCIgxAABBiMwQCYVVsMCgDBoc5gHAA0SERACQmKBIu7iALgNc0MVdB0IIQhCCWBxAAQk4OOGGJ97whBucoFNU6iAAAAAAAAwA4AEA4KAAIiKaq7C4wMjQ2ODo8AgAAAAAABYA+AAAOD6AiIjmKiwuMDI0Njg6PAIAAAAAAAAAAICAgAAAAAAAQAAAAICAT2dnUwAEAAAAAAAAAADwOoUqAgAAAJxxaEsBAQA=" type="audio/mp4" id="player_source"><source id="altsrc"></audio></div>
+	<div><audio controls autoplay id="player" hidden></audio></div>
 	<div>
 	<h4 hidden>Played history:</h4>
 	<ul id="played_history_list" hidden></ul>
